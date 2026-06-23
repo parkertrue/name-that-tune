@@ -23,7 +23,7 @@ export default function RegisterPage() {
 
   // Redirect if already logged in
   if (isAuthenticated) {
-    return <Navigate to="/notes" replace />
+    return <Navigate to="/decks" replace />
   }
 
   const handleSubmit = async (e) => {

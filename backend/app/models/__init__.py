@@ -2,4 +2,5 @@ from app import db
 
 # Import all models here so Flask-Migrate can detect them
 from .auth import User
-from .notes import Note
+from .deck import Deck
+from .track import Track

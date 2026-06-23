@@ -89,11 +89,11 @@ class TestGlobalErrorHandlers:
         """Pydantic validation errors should return 400 with details."""
         # Send invalid data that triggers Pydantic validation
         payload = {
-            'content': ''  # Empty content violates min_length
+            'name': ''  # Empty name violates min_length
         }
 
         response = client.post(
-            '/api/notes',
+            '/api/decks',
             data=json.dumps(payload),
             headers=auth_headers
         )
@@ -105,7 +105,7 @@ class TestGlobalErrorHandlers:
     def test_missing_json_body(self, client, auth_headers):
         """Missing JSON body should be handled gracefully."""
         response = client.post(
-            '/api/notes',
+            '/api/decks',
             headers=auth_headers
         )
 
@@ -115,7 +115,7 @@ class TestGlobalErrorHandlers:
     def test_malformed_json(self, client, auth_headers):
         """Malformed JSON should return 400."""
         response = client.post(
-            '/api/notes',
+            '/api/decks',
             data='{"invalid": json}',
             headers=auth_headers
         )
@@ -128,7 +128,7 @@ class TestJWTErrorHandlers:
 
     def test_missing_token_handler(self, client):
         """Missing JWT token should return 401 with AUTH_MISSING_TOKEN."""
-        response = client.get('/api/notes')
+        response = client.get('/api/decks')
 
         assert response.status_code == 401
         data = json.loads(response.data)
@@ -142,7 +142,7 @@ class TestJWTErrorHandlers:
             'Content-Type': 'application/json'
         }
 
-        response = client.get('/api/notes', headers=headers)
+        response = client.get('/api/decks', headers=headers)
 
         # Returns 422 for decode errors, but our handler might catch it
         assert response.status_code in [401, 422]
@@ -154,7 +154,7 @@ class TestJWTErrorHandlers:
             'Content-Type': 'application/json'
         }
 
-        response = client.get('/api/notes', headers=headers)
+        response = client.get('/api/decks', headers=headers)
 
         assert response.status_code == 401
         data = json.loads(response.data)
@@ -171,7 +171,7 @@ class TestJWTErrorHandlers:
 
         for headers in test_headers:
             headers['Content-Type'] = 'application/json'
-            response = client.get('/api/notes', headers=headers)
+            response = client.get('/api/decks', headers=headers)
             assert response.status_code in [401, 422]
 
 
@@ -182,8 +182,8 @@ class TestErrorConsistency:
         """All API errors should return JSON."""
         test_cases = [
             ('/api/nonexistent', 'GET', {}),
-            ('/api/notes', 'GET', {}),  # No auth
-            ('/api/notes', 'POST', {'email': 'invalid'}),  # Invalid schema
+            ('/api/decks', 'GET', {}),  # No auth
+            ('/api/decks', 'POST', {'email': 'invalid'}),  # Invalid schema
         ]
 
         for endpoint, method, data in test_cases:
@@ -203,7 +203,7 @@ class TestErrorConsistency:
     def test_error_codes_are_uppercase(self, client):
         """Error codes should be uppercase with underscores."""
         # Test various error scenarios
-        response = client.get('/api/notes')  # Missing token
+        response = client.get('/api/decks')  # Missing token
         data = json.loads(response.data)
         assert data['error']['code'].isupper()
         assert '_' in data['error']['code'] or data['error']['code'].isalnum()
@@ -215,7 +215,7 @@ class TestErrorConsistency:
     def test_error_messages_are_user_friendly(self, client, sample_user):
         """Error messages should be readable."""
         # Missing token
-        response = client.get('/api/notes')
+        response = client.get('/api/decks')
         data = json.loads(response.data)
         assert len(data['error']['message']) > 0
         assert data['error']['message'][0].isupper()  # Starts with capital

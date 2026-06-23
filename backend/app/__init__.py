@@ -37,15 +37,19 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Initialize Redis
     if app.config["REDIS_ENABLED"]:
-        redis_service = RedisService(
-            host=app.config["REDIS_HOST"],
-            port=app.config["REDIS_PORT"],
-            db=app.config["REDIS_DB"],
-            password=app.config["REDIS_PASSWORD"],
-            max_connections=app.config["REDIS_MAX_CONNECTIONS"]
-        )
+        try:
+            redis_service = RedisService(
+                host=app.config["REDIS_HOST"],
+                port=app.config["REDIS_PORT"],
+                db=int(app.config["REDIS_DB"]),
+                password=app.config["REDIS_PASSWORD"],
+                max_connections=app.config["REDIS_MAX_CONNECTIONS"]
+            )
+        except Exception:
+            redis_service = None
+    else:
+        redis_service = None
 
     # Initialize Rate Limiter
     if app.config["RATELIMIT_ENABLED"]:
@@ -64,9 +68,9 @@ def create_app():
         if jwt_payload.get('type') != 'refresh':
             return False
 
-        # Skip Redis check if not available
         if redis_service is None:
-            return False
+            # Fail closed: if Redis is unavailable, treat all refresh tokens as revoked
+            return True
 
         jti = jwt_payload.get('jti')
         user_id = jwt_payload.get('sub')
@@ -143,7 +147,6 @@ def create_app():
 
     @app.errorhandler(500)
     def server_error(e):
-        app.logger.exception(e)
         return error_response(
             code="INTERNAL_ERROR",
             message="Something went wrong",

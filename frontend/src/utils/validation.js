@@ -1,8 +1,8 @@
 export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 128
 export const EMAIL_MAX_LENGTH = 128
-export const NOTE_MIN_LENGTH = 1
-export const NOTE_MAX_LENGTH = 256
+export const DECK_NAME_MIN_LENGTH = 1
+export const DECK_NAME_MAX_LENGTH = 100
 
 /**
  * Validate password meets all requirements
@@ -64,25 +64,25 @@ export function validateEmail(email) {
 }
 
 /**
- * Validate note content
- * Must be 1-256 characters
+ * Validate deck name
+ * Must be 1-100 characters
  */
-export function validateNoteContent(content) {
+export function validateDeckName(name) {
   const errors = []
 
-  if (!content || !content.trim()) {
-    errors.push('Note content is required')
+  if (!name || !name.trim()) {
+    errors.push('Deck name is required')
     return errors
   }
 
-  const trimmed = content.trim()
+  const trimmed = name.trim()
 
-  if (trimmed.length < NOTE_MIN_LENGTH) {
-    errors.push('Note cannot be empty')
+  if (trimmed.length < DECK_NAME_MIN_LENGTH) {
+    errors.push('Deck name cannot be empty')
   }
 
-  if (trimmed.length > NOTE_MAX_LENGTH) {
-    errors.push(`Note must be at most ${NOTE_MAX_LENGTH} characters`)
+  if (trimmed.length > DECK_NAME_MAX_LENGTH) {
+    errors.push(`Deck name must be at most ${DECK_NAME_MAX_LENGTH} characters`)
   }
 
   return errors

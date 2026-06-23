@@ -1,64 +1,52 @@
-# React + Flask + MySQL Template
+# Name That Tune
 
-This repository is a ready-to-use template for a React + Flask + MySQL web application, designed to eliminate the overhead of initial project scaffolding and environment configuration. 
+A Spotify-powered song-flashcard trainer for music-trivia prep. Build **decks** of songs, import tracks straight from a Spotify playlist, then **study**: a Spotify clip plays with the album art and title masked, you guess the artist(s) and title, and an Anki-style spaced-repetition engine retires songs as you master them.
 
-**Features**: 
+Grading happens **server-side**, so the answer is never sent to the browser until you submit — the game can't be cheated by inspecting network traffic. Playback uses Spotify's **public embed iframe** (`open.spotify.com/embed/track/{id}`), so **no Spotify API credentials are required**.
 
-* Fully Dockerized production setup
-* Hybrid development setup (local app + Dockerized database)
-* Flask application using the factory pattern
-* MySQL database with Alembic migrations
-* Redis for session management and rate limiting
-* Nginx reverse proxy for serving the frontend and API in production
-* HTTPS support with self-signed certificates for development
+**Stack**
 
-**Full-stack template**:
+* **Frontend**: React (Vite), React Router, Axios
+* **Backend**: Flask + SQLAlchemy + Alembic, JWT auth, Pydantic validation
+* **Database**: MySQL 8
+* **Cache / sessions**: Redis (JWT refresh-token blocklist + caching)
+* **Reverse proxy (prod)**: Nginx (HTTPS, security headers, rate limiting)
+* **Containers**: Docker / Docker Compose (dev, test, prod)
 
-* **Frontend**: React (Vite)
-* **Backend**: Flask + SQLAlchemy + Alembic
-* **Database**: MySQL
-* **Cache/Sessions**: Redis
-* **Reverse proxy (prod)**: Nginx
-* **Containers**: Docker / Docker Compose
+---
+
+## How It Works
+
+1. **Import** — Run the in-app extractor bookmarklet on a Spotify playlist to copy its tracks as JSON, then paste into a deck. The parser also accepts loose `open.spotify.com/track/...` URLs or plain `Artist - Title` lines as fallbacks.
+2. **Study** — A masked Spotify embed plays a clip. You type the artist(s) and title.
+3. **Grade** — The backend fuzzy-matches your guess (case/punctuation-insensitive, handles `feat.`/`&`, requires every artist to be named) and reveals the answer.
+4. **Rate** — You rate the card *Again / Hard / Good / Easy*. A session-local **SM-2** algorithm schedules how soon the card recurs; a card "graduates" (shown as **mastered**) once its interval reaches 21. Study a single deck or the virtual **All Songs** scope across every deck.
 
 ---
 
 ## Required Software
 
-Make sure the following tools are installed before running the project:
+* **Docker & Docker Compose** — MySQL, Redis, and production builds. [Install](https://www.docker.com/products/docker-desktop/)
+* **Python 3.12+** — Flask backend. [Install](https://www.python.org/downloads/)
+* **Node.js 20+ (includes npm)** — React frontend (Vite). [Install](https://nodejs.org/)
+* **Git Bash (Windows only)** — a Unix-like shell so the commands below match Linux/macOS. Installed with [Git for Windows](https://git-scm.com/download/win).
 
-* **Docker & Docker Compose**  
-  Used for MySQL, Redis, and production builds.  
-  [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
-
-* **Python 3.12+**  
-  Used for the Flask backend.  
-  [https://www.python.org/downloads/](https://www.python.org/downloads/)
-
-* **Node.js 20+ (includes npm)**  
-  Used for the React frontend (Vite).  
-  [https://nodejs.org/](https://nodejs.org/)
-
-* **Git Bash (Windows users only)**  
-  Provides a Unix-like shell on Windows so you can use the same commands as Linux/macOS.  
-  Installed automatically with Git for Windows.  
-  [https://git-scm.com/download/win](https://git-scm.com/download/win)
-
-> ⚠️ **Windows users:** Use Git Bash for all commands in this README.  
-> ⚠️ **All users:** Make sure Docker is running before executing any docker compose commands.
+> ⚠️ **Windows users:** use Git Bash for all commands in this README.
+> ⚠️ **All users:** make sure Docker is running before any `docker compose` command.
 
 ---
 
 ## Environment Files
 
-You must create these locally (not committed):
+Create these locally (they are **not** committed). Copy the matching block from [`.env.examples`](.env.examples):
 
-* `.env.dev` → Development (local backend + frontend, Docker DB + Redis)
-* `.env.prod` → Production (fully Dockerized)
+| File | Purpose |
+|------|---------|
+| `.env.dev` | Development — local backend + frontend, Dockerized MySQL + Redis |
+| `.env.test` | Integration/E2E testing — isolated Dockerized MySQL (3307) + Redis (6380) |
+| `.env.prod` | Production — fully Dockerized |
 
-Copy the examples from `.env.examples`. Make sure to set strong, unique passwords for MYSQL_PASSWORD, MYSQL_ROOT_PASSWORD, REDIS_PASSWORD, and SECRET_KEY. Use different credentials for dev and prod.
-
-You can generate secure values with:
+Set strong, unique values for `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `REDIS_PASSWORD`, and `SECRET_KEY`, and use different credentials for each environment. Generate secure values with:
 
 ```bash
 python3 -c "import uuid; print(uuid.uuid4().hex)"
@@ -66,136 +54,24 @@ python3 -c "import uuid; print(uuid.uuid4().hex)"
 
 ---
 
-# SSL/HTTPS Setup
+## Development Mode
 
-The production app must run over HTTPS. To enable HTTPS:
+The database and Redis run in Docker; Flask and React run locally for hot reloading and easier debugging.
 
-## Production Testing (Self-Signed Certificate)
+| Component | Where |
+|-----------|-------|
+| MySQL, Redis | Docker |
+| Flask, React | Local machine |
 
-```bash
-# 1. Generate self-signed certificate
-mkdir -p nginx/certs
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout nginx/certs/privkey.pem \
-  -out nginx/certs/fullchain.pem \
-  -subj "/C=US/ST=California/L=San Francisco/O=Dev/CN=localhost"
+### One-Time Setup
 
-# 2. Update nginx/default.conf and docker-compose.yml for HTTPS
-# See HTTPS_Upgrade_Guide.md for detailed instructions
-
-# 3. Rebuild and restart
-docker compose --env-file .env.prod up --build
-```
-
-Visit `https://localhost` and bypass the browser security warning (expected for self-signed certs).
-
-## Production (Let's Encrypt)
-
-For production with a real domain:
-
-```bash
-# 1. Install Certbot on your server
-sudo apt install certbot  # Ubuntu/Debian
-
-# 2. Obtain certificate
-sudo certbot certonly --standalone -d yourdomain.com -d www.yourdomain.com
-
-# 3. Update nginx/default.conf with your domain
-# 4. Mount /etc/letsencrypt in docker-compose.yml
-# See HTTPS_Upgrade_Guide.md for complete production setup
-```
-
-**For complete HTTPS setup instructions, see `HTTPS_Upgrade_Guide.md`.**
-
----
-
-# Production Mode (Docker)
-
-Run your web application in a consistent, production-like environment.
-
-**Architecture (Prod)**
-
-* MySQL → Docker
-* Redis → Docker
-* Flask (Gunicorn) → Docker
-* React → Built & served by Nginx
-
----
-
-## One-Time Setup (Production)
-
-```bash
-docker compose --env-file .env.prod build
-```
-
----
-
-## Start Production App
-
-```bash
-docker compose --env-file .env.prod up
-```
-
-**When to rebuild:**
-
-Frontend changes require `--build` (React app is built into `dist/` and served by Nginx):
-
-```bash
-docker compose --env-file .env.prod up --build
-```
-
-Backend changes do NOT require `--build` — Gunicorn reloads automatically when Python files change.
-
-**Production URL:** [http://localhost](http://localhost) (or [https://localhost](https://localhost) if SSL is configured)
-
----
-
-## Stop Production App
-
-```bash
-CTRL+C
-docker compose --env-file .env.prod down
-```
-
----
-
-## Full Reset (⚠️ Deletes Database)
-
-Stops everything and **removes all volumes (data loss)**:
-
-```bash
-docker compose --env-file .env.prod down --volumes --remove-orphans
-docker system prune -af
-```
-
----
-
-# Development Mode
-
-The dev database and Redis run in Docker, while Flask and React run locally for faster iteration, hot reloading, and easier debugging.
-
-**Architecture (Dev)**
-
-* MySQL → Docker
-* Redis → Docker
-* Flask → Local machine
-* React → Local machine
-
----
-
-## One-Time Setup (Dev)
-
-These steps only need to be done **once per machine** (or when dependencies change).
-
-### 1: Build / Pull Docker Images (DB + Redis)
+**1. Build the dev DB + Redis images:**
 
 ```bash
 docker compose --env-file .env.dev -f docker-compose.dev.yml build
 ```
 
-### 2: Backend Virtual Environment
-
-From `backend/`:
+**2. Backend virtual environment** (from `backend/`):
 
 ```bash
 python -m venv .venv
@@ -204,144 +80,223 @@ source .venv/bin/activate       # Linux/macOS
 pip install -r requirements.txt
 ```
 
-### 3: Frontend Dependencies
-
-From `frontend/`:
+**3. Frontend dependencies** (from `frontend/`):
 
 ```bash
 npm install
 ```
 
----
+### Daily Workflow
 
-## Daily Development Workflow
+Run each in its own terminal.
 
-These are the commands you'll run **every time you start working**.
-
-### Start Database + Redis (Dev)
+**Terminal 1 — Database + Redis:**
 
 ```bash
 docker compose --env-file .env.dev -f docker-compose.dev.yml up
 ```
 
-MySQL will be available on port 3306, Redis on port 6379.
+MySQL is exposed on `127.0.0.1:3306`, Redis on `127.0.0.1:6379`.
 
----
-
-### Start Backend (Dev)
-
-From `backend/`:
+**Terminal 2 — Backend** (from `backend/`):
 
 ```bash
 ./run_dev.sh
 ```
 
-What this does:
-* Loads `.env.dev`
-* Activates virtual environment (if not already active)
-* Waits for MySQL and Redis to be ready
-* Runs `flask db upgrade`
-* Starts the Flask app
+This loads `.env.dev`, activates the virtualenv if needed, waits for MySQL/Redis, runs `flask db upgrade`, and starts Flask.
 
----
-
-### Start Frontend (Dev)
-
-From `frontend/`:
+**Terminal 3 — Frontend** (from `frontend/`):
 
 ```bash
 npm run dev
 ```
 
-**Dev URLs**
-
-| Service  | URL |
-|----------|-----|
+| Service | URL |
+|---------|-----|
 | Frontend | [http://localhost:5173](http://localhost:5173) |
-| Backend  | [http://localhost:5000/api/health](http://localhost:5000/api/health) |
+| Backend health | [http://localhost:5000/api/health](http://localhost:5000/api/health) |
 
----
+### Database Schema Changes
 
-## Database Schema Changes (During Dev)
-
-To modify SQLAlchemy models, from `backend/`:
+After editing SQLAlchemy models (from `backend/`):
 
 ```bash
 flask db migrate -m "describe change"
 flask db upgrade
 ```
 
----
+### Stopping Dev
 
-## Stop Development Mode
-
-Stop development servers and database.
-
-### Stop Database + Redis (Dev)
+`CTRL+C` in each terminal, then tear down the containers:
 
 ```bash
-CTRL+C
 docker compose --env-file .env.dev -f docker-compose.dev.yml down
 ```
 
-### Stop Backend (Dev)
+---
 
-From `backend/`:
+## Testing
+
+### Backend (from `backend/`)
 
 ```bash
-CTRL+C
+./run_tests.sh unit          # Fast: SQLite in-memory, no Docker, Redis/rate-limiting disabled
+./run_tests.sh integration   # Real MySQL (3307) + Redis (6380) via docker-compose.test.yml
+./run_tests.sh combined      # All tests with a merged coverage report (htmlcov/)
+./run_tests.sh all           # Unit + integration with separate reports
+./run_tests.sh help          # All options (--verbose, --no-coverage)
 ```
 
-### Stop Frontend (Dev)
+Integration tests require Docker and a `.env.test` file in the project root.
 
-From `frontend/`:
+### Frontend (from `frontend/`)
 
 ```bash
-CTRL+C
+npm run test          # Watch mode
+npm run test:run      # Run once (CI)
+npm run test:coverage # Coverage report (coverage/)
+```
+
+Unit tests use Vitest + jsdom with **MSW** (Mock Service Worker) mocking the API at the network layer.
+
+### End-to-End (from `frontend/`)
+
+Playwright drives the full Dockerized stack over HTTPS. Start the stack with the `e2e` profile first:
+
+```bash
+docker compose --env-file .env.test -f docker-compose.test.yml --profile e2e up --build
+```
+
+Then, in another terminal:
+
+```bash
+npm run test:e2e          # Headless against https://localhost:8443
+npm run test:e2e:ui       # Playwright UI mode
+npm run test:e2e:debug    # Step-through debugging
+```
+
+The e2e stack serves the app via Nginx on `8443` (HTTPS) and `8080` (HTTP). Self-signed cert errors are ignored by the test config.
+
+---
+
+## SSL / HTTPS
+
+The production and e2e stacks run over HTTPS. Nginx ([`nginx/default.conf`](nginx/default.conf)) is already configured for TLS — it redirects HTTP→HTTPS, terminates TLS on 443, and adds HSTS/CSP/security headers. The only setup step is providing certificates in `nginx/certs/`.
+
+### Self-Signed Certificate (local / production testing)
+
+```bash
+mkdir -p nginx/certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout nginx/certs/privkey.pem \
+  -out nginx/certs/fullchain.pem \
+  -subj "/C=US/ST=California/L=San Francisco/O=Dev/CN=localhost"
+```
+
+Then start the production stack (below) and visit `https://localhost`, bypassing the browser warning (expected for self-signed certs).
+
+### Let's Encrypt (real domain)
+
+```bash
+sudo apt install certbot                                    # Ubuntu/Debian
+sudo certbot certonly --standalone -d yourdomain.com -d www.yourdomain.com
+```
+
+Update `server_name` in [`nginx/default.conf`](nginx/default.conf), mount your `/etc/letsencrypt` certs into the `nginx` service in [`docker-compose.yml`](docker-compose.yml), and rebuild.
+
+---
+
+## Production Mode (Docker)
+
+All services run in containers with resource limits and health checks.
+
+| Component | Where |
+|-----------|-------|
+| MySQL, Redis | Docker |
+| Flask (Gunicorn) | Docker |
+| React | Built and served by Nginx |
+
+**Build:**
+
+```bash
+docker compose --env-file .env.prod build
+```
+
+**Start:**
+
+```bash
+docker compose --env-file .env.prod up
+```
+
+The app is served at **[https://localhost](https://localhost)** (HTTP on port 80 redirects to HTTPS). Provide certs in `nginx/certs/` first — see [SSL / HTTPS](#ssl--https).
+
+Frontend changes require a rebuild (React is compiled into `dist/` and served by Nginx):
+
+```bash
+docker compose --env-file .env.prod up --build
+```
+
+**Stop:**
+
+```bash
+docker compose --env-file .env.prod down
+```
+
+**Full reset (⚠️ deletes the database):**
+
+```bash
+docker compose --env-file .env.prod down --volumes --remove-orphans
 ```
 
 ---
 
-# Testing Mode
+## Architecture
 
-Run tests in an isolated environment.
+### Request Flow
 
-## Backend Testing
-
-From `backend/`:
-
-```bash
-./run_tests.sh all
+```
+Browser → Nginx (80/443) → static React assets, or /api/* proxied to Flask (Gunicorn) → MySQL / Redis
 ```
 
-Runs all unit and integration tests with coverage.
+### Backend (`backend/app/`)
 
-### Testing Options
+* **`__init__.py`** — App factory; registers extensions (JWT, SQLAlchemy, CORS, Limiter, Redis) and blueprints.
+* **`config.py`** — Per-environment config (`Development`, `Testing`, `Integration`, `Production`).
+* **`routes/`** — API blueprints:
+  * `auth` — `register`, `login`, `refresh`, `logout`, `logout-all` (refresh tokens via httpOnly cookies; revocation through a Redis blocklist).
+  * `health` — `/api/health`.
+  * `decks` — deck CRUD, bulk track import (`/<id>/tracks`), and `/<id>/reset`; `/decks/all` for the All Songs view.
+  * `study` — `/study/next` (interval-weighted picker that withholds the answer) and `/study/grade` (two-step `guess`/`reveal` → `rate` flow, plus a `master` shortcut).
+* **`models/`** — SQLAlchemy models (`User`, `Deck`, `Track`). Per-card SM-2 state lives on the `Track` row; `apply_review(quality)` implements classic SM-2 and `selection_weight()` makes shorter-interval cards recur sooner.
+* **`schemas/`** — Pydantic request/response schemas.
+* **`utils/`** — Redis service, error handlers, HTML sanitizer (nh3), and `matching.py` (the server-side fuzzy grader).
+* **`migrations/`** — Alembic migrations for MySQL.
 
-To learn about running specific types of tests:
+### Frontend (`frontend/src/`)
 
-```bash
-./run_tests.sh help
-```
+* **`api/`** — Central Axios instance + service modules (auth, decks).
+* **`contexts/AuthContext`** — global auth state.
+* **`hooks/`** — `useAuth`, `useDecks`, `useStudySession` (the study state machine).
+* **`utils/`** — `importParser.js` (paste → tracks) and `bookmarklet.js` (the extractor source).
+* **`components/decks/`** — `DeckList`/`DeckCard`/`DeckForm`, `ImportPanel`, `StudyScreen`, `GradeResult`, `MasteryDashboard`, each with co-located tests.
+* **`pages/`** — `DecksPage`, `DeckDashboardPage`, `StudyPage`.
+
+### Docker Compose Files
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.dev.yml` | Dev: MySQL (3306) + Redis (6379) only |
+| `docker-compose.test.yml` | Test: isolated MySQL (3307) + Redis (6380); `e2e` profile adds backend + Nginx (8443/8080) |
+| `docker-compose.yml` | Production: all services with resource limits and health checks |
 
 ---
 
-## Frontend Testing
+## Environment Summary
 
-From `frontend/`:
-
-```bash
-npm run test:run      # Run tests once (ideal for CI)
-npm run test          # Watch mode (auto re-runs on changes)
-npm run test:coverage # Generate coverage report (coverage/ folder)
-```
-
----
-
-## Summary
-
-| Mode | DB     | Redis  | Backend | Frontend |
-|------|--------|--------|---------|----------|
-| Prod | Docker | Docker | Docker  | Docker   |
-| Dev  | Docker | Docker | Local   | Local    |
-| Test | Memory | N/A    | Local   | Local    |
+| Mode | MySQL | Redis | Backend | Frontend | E2E proxy |
+|------|-------|-------|---------|----------|-----------|
+| Dev | Docker (3306) | Docker (6379) | Local | Local | — |
+| Test (unit) | SQLite in-memory | Disabled | Local | Local (jsdom) | — |
+| Test (integration/E2E) | Docker (3307) | Docker (6380) | Local / Docker | — | Nginx (8443) |
+| Prod | Docker | Docker | Docker | Nginx | Nginx (443) |

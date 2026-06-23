@@ -5,7 +5,9 @@ import Layout from './components/layout/Layout'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import NotesPage from './pages/NotesPage'
+import DecksPage from './pages/DecksPage'
+import DeckDashboardPage from './pages/DeckDashboardPage'
+import StudyPage from './pages/StudyPage'
 
 export default function App() {
   return (
@@ -19,10 +21,26 @@ export default function App() {
 
           {/* Protected routes */}
           <Route
-            path="notes"
+            path="decks"
             element={
               <ProtectedRoute>
-                <NotesPage />
+                <DecksPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="decks/:id"
+            element={
+              <ProtectedRoute>
+                <DeckDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="study/:deckId"
+            element={
+              <ProtectedRoute>
+                <StudyPage />
               </ProtectedRoute>
             }
           />

@@ -1,0 +1,309 @@
+/* Shared deck UI: list, cards, forms, import panel, dashboard */
+
+.decks-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+/* Gradient page banner — shared by the decks list + deck dashboard headers,
+   echoing the home hero. */
+.page-banner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-bottom: 1.75rem;
+  padding: clamp(1.75rem, 4vw, 2.5rem) clamp(1.5rem, 4vw, 2.25rem);
+  border-radius: var(--radius-lg);
+  color: #fff;
+  background: var(--gradient-hero);
+  box-shadow: var(--shadow-lg);
+}
+
+.page-banner h1 {
+  margin-bottom: 0.4rem;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.page-banner-glow {
+  position: absolute;
+  inset: auto -8% -55% auto;
+  width: 320px;
+  height: 320px;
+  z-index: -1;
+  background: radial-gradient(circle, var(--brand-glow), transparent 65%);
+  filter: blur(20px);
+  animation: glow-pulse 6s ease-in-out infinite;
+}
+
+.page-banner-eyebrow {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #e7f7ee;
+}
+
+.page-banner--deck .deck-dashboard-actions {
+  margin: 1rem 0 0;
+}
+
+.decks-subtitle {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+/* When the subtitle sits inside the gradient banner it needs to read light. */
+.page-banner .decks-subtitle {
+  margin-bottom: 0;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  color: #fff;
+}
+
+/* Create-deck form */
+.deck-form {
+  margin-bottom: 1.5rem;
+}
+
+.deck-form-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.deck-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #d1d5db;
+  font-size: 1rem;
+}
+
+.deck-input.error {
+  border-color: #dc2626;
+}
+
+.field-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+/* Deck list + cards */
+.deck-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.deck-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-left: 5px solid #1db954;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.deck-card--all {
+  border-left-color: #a78bfa;
+}
+
+.deck-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.deck-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.deck-card-name {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.deck-card-stats {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.deck-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.deck-delete-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.deck-delete-btn:hover {
+  color: #dc2626;
+}
+
+.decks-empty,
+.decks-loading,
+.dashboard-empty {
+  color: #6b7280;
+  padding: 1rem 0;
+}
+
+/* Progress bar (shared) */
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  transition: width 0.4s;
+}
+
+/* SM-2 interval badge (shared between study + dashboard) */
+.card-interval,
+.track-interval {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Import panel */
+.import-section {
+  margin-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+}
+
+.import-deck-select {
+  display: block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.import-deck-select select {
+  margin-left: 0.5rem;
+  padding: 0.4rem;
+}
+
+.import-instructions {
+  margin-bottom: 1rem;
+}
+
+.import-instructions ol {
+  margin: 0.5rem 0 0.75rem 1.25rem;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+.bookmarklet-code,
+.import-textarea {
+  width: 100%;
+  font-family: monospace;
+  font-size: 0.8rem;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  resize: vertical;
+  margin-bottom: 0.5rem;
+}
+
+.import-textarea {
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+/* Mastery dashboard */
+.dashboard-summary {
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.track-section {
+  margin-top: 1.5rem;
+}
+
+.track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.track-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.track-row--mastered {
+  background: #dcfce7;
+}
+
+.track-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.track-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-artists {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.mastered-heading {
+  color: #16a34a;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--brand-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.deck-dashboard-actions {
+  margin: 0.75rem 0;
+}

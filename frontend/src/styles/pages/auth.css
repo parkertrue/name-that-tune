@@ -4,6 +4,8 @@
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 200px);
+  background:
+    radial-gradient(circle at 50% -10%, rgba(29, 185, 84, 0.1), transparent 55%);
 }
 
 .auth-container {
@@ -13,8 +15,24 @@
 }
 
 .auth-card {
-  background: white;
-  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  padding: 2.5rem 2rem 2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Gradient accent bar across the top, tying the card to the app's scheme. */
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--brand), #0b0e11);
 }
 
 .auth-card h2 {
@@ -34,7 +52,12 @@
 }
 
 .auth-link {
-  color: #3498db;
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 768px) {

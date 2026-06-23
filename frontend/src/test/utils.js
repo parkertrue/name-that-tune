@@ -68,13 +68,16 @@ export function waitForNextUpdate(timeout = 1000) {
 }
 
 /**
- * Create mock notes data
+ * Create mock decks data
  */
-export function createMockNotes(count = 3) {
+export function createMockDecks(count = 3) {
   return Array.from({ length: count }, (_, i) => ({
     id: i + 1,
-    content: `Test note ${i + 1}`,
-    created_at: new Date(Date.now() - i * 1000).toISOString()
+    name: `Deck ${i + 1}`,
+    created_at: new Date(Date.now() - i * 1000).toISOString(),
+    total: 5,
+    mastered: i,
+    active: 5 - i
   }))
 }
 

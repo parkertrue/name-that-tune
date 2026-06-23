@@ -1,3 +1,50 @@
+:root {
+  /* Brand (Spotify green — matches deck accents) */
+  --brand: #1db954;
+  --brand-dark: #169c46;
+  --brand-glow: rgba(29, 185, 84, 0.45);
+
+  /* Neutrals */
+  --ink: #121417;
+  --ink-soft: #2c3e50;
+  --surface: #ffffff;
+  --surface-dark: #181d24;
+  --bg: #f6f7f9;
+  --border: #eceff1;
+  --text-muted: #6b7280;
+
+  /* Shape + depth */
+  --radius: 12px;
+  --radius-lg: 22px;
+  --shadow-md: 0 8px 24px rgba(17, 20, 23, 0.08);
+  --shadow-lg: 0 30px 60px -20px rgba(17, 20, 23, 0.35);
+  --transition: 180ms ease;
+
+  /* Signature dark gradient with a green glow — used for heroes, page
+     headers, and the study card so the whole app shares one look. */
+  --gradient-hero:
+    radial-gradient(circle at 15% 20%, rgba(29, 185, 84, 0.18), transparent 45%),
+    linear-gradient(145deg, #1a1f24 0%, #0b0e11 100%);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+}
+
+/* Soft pulsing brand glow, reused by every gradient panel. */
+@keyframes glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.65; }
+  50% { transform: scale(1.18); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-glow,
+  .page-banner-glow {
+    animation: none;
+  }
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   margin-bottom: 1rem;

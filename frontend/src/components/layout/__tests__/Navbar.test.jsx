@@ -76,9 +76,9 @@ describe('Navbar', () => {
         expect(homeLinks).toHaveLength(0)
       })
 
-      it('should not show notes link', () => {
+      it('should not show decks link', () => {
         renderNavbar('/')
-        expect(screen.queryByText('My Notes')).not.toBeInTheDocument()
+        expect(screen.queryByText('My Decks')).not.toBeInTheDocument()
       })
 
       it('should not show user section', () => {
@@ -140,15 +140,15 @@ describe('Navbar', () => {
     })
 
     describe('on home page', () => {
-      it('should show notes link', () => {
+      it('should show decks link', () => {
         renderNavbar('/')
-        expect(screen.getByText('My Notes')).toBeInTheDocument()
+        expect(screen.getByText('My Decks')).toBeInTheDocument()
       })
 
-      it('should have correct href for notes link', () => {
+      it('should have correct href for decks link', () => {
         renderNavbar('/')
-        const notesLink = screen.getByText('My Notes')
-        expect(notesLink).toHaveAttribute('href', '/notes')
+        const decksLink = screen.getByText('My Decks')
+        expect(decksLink).toHaveAttribute('href', '/decks')
       })
 
       it('should not show home link on home page', () => {
@@ -164,26 +164,26 @@ describe('Navbar', () => {
       })
     })
 
-    describe('on notes page', () => {
+    describe('on decks page', () => {
       it('should show home link', () => {
-        renderNavbar('/notes')
+        renderNavbar('/decks')
         expect(screen.getByText('Home')).toBeInTheDocument()
       })
 
       it('should have correct href for home link', () => {
-        renderNavbar('/notes')
+        renderNavbar('/decks')
         const homeLink = screen.getByText('Home')
         expect(homeLink).toHaveAttribute('href', '/')
       })
 
-      it('should not show notes link on notes page', () => {
-        renderNavbar('/notes')
-        const notesLinks = screen.queryAllByText('My Notes')
-        expect(notesLinks).toHaveLength(0)
+      it('should not show decks link on decks page', () => {
+        renderNavbar('/decks')
+        const decksLinks = screen.queryAllByText('My Decks')
+        expect(decksLinks).toHaveLength(0)
       })
 
       it('should not show login or register links', () => {
-        renderNavbar('/notes')
+        renderNavbar('/decks')
         expect(screen.queryByText('Login')).not.toBeInTheDocument()
         expect(screen.queryByText('Register')).not.toBeInTheDocument()
       })
@@ -254,14 +254,14 @@ describe('Navbar', () => {
 
       // Home page - authenticated
       const { unmount: unmount1 } = renderNavbar('/')
-      expect(screen.getByText('My Notes')).toBeInTheDocument()
+      expect(screen.getByText('My Decks')).toBeInTheDocument()
       expect(screen.queryByText('Home')).not.toBeInTheDocument()
       unmount1()
 
-      // Notes page - authenticated
-      renderNavbar('/notes')
+      // Decks page - authenticated
+      renderNavbar('/decks')
       expect(screen.getByText('Home')).toBeInTheDocument()
-      expect(screen.queryByText('My Notes')).not.toBeInTheDocument()
+      expect(screen.queryByText('My Decks')).not.toBeInTheDocument()
     })
   })
 
@@ -324,7 +324,7 @@ describe('Navbar', () => {
       storage.getEmail.mockReturnValue('user@example.com')
       
       renderNavbar('/')
-      expect(screen.getByText('My Notes')).toHaveAccessibleName()
+      expect(screen.getByText('My Decks')).toHaveAccessibleName()
     })
   })
 })

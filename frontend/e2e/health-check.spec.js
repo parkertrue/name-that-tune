@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.describe('System Health Check', () => {
   test('API health endpoint is accessible', async ({ page }) => {
     // Try to access the health endpoint
-    const response = await page.goto('https://localhost/api/health')
+    const response = await page.goto('/api/health')
     
     expect(response.status()).toBe(200)
     
@@ -16,7 +16,7 @@ test.describe('System Health Check', () => {
     await page.goto('/')
     
     // Check if we can see the home page
-    await expect(page.getByText(/Welcome to Flask/i)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/Name That Tune/i).first()).toBeVisible({ timeout: 10000 })
   })
 
   test('can navigate to register page', async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe('System Health Check', () => {
     // Test the API directly to see what it returns
     const testEmail = `api-test-${Date.now()}@example.com`
     
-    const response = await request.post('https://localhost/api/auth/register', {
+    const response = await request.post('/api/auth/register', {
       data: {
         email: testEmail,
         password: 'SecurePass123'

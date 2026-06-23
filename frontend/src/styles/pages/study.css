@@ -1,0 +1,233 @@
+/* Study / play screen */
+
+.study-container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.study-header {
+  margin-bottom: 0.5rem;
+}
+
+.study-progress {
+  margin-bottom: 0.75rem;
+}
+
+.study-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.4rem;
+}
+
+.study-card {
+  /* Lighter slate than the near-black Spotify embed, so the embed reads as a
+     distinct inset rather than blending into the card. */
+  background: #2a323d;
+  color: #e2e8f0;
+  border: 1px solid rgba(29, 185, 84, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+/* Spotify embed with masking overlays */
+.embed-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.embed-wrap iframe {
+  width: 100%;
+  height: 152px;
+  border: none;
+  border-radius: 12px;
+  display: block;
+}
+
+/* Covers the whole embed except a right-edge column that exposes the Spotify
+   play button (bottom). Background matches the embed's dark theme so the mask
+   blends in. */
+.embed-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 52px;
+  background: #1F1F1F;
+  border-radius: 12px 0 0 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Covers the top of the exposed right-edge column, where a long title can
+   bleed past the main mask, while leaving the bottom exposed so the play
+   button stays visible and clickable. */
+.embed-mask-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 52px;
+  height: 96px;
+  background: #1F1F1F;
+  border-radius: 0 12px 0 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.embed-mask span {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.text-only {
+  background: #282828;
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: #94a3b8;
+}
+
+/* Guess form */
+.guess-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  text-align: left;
+}
+
+.guess-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.guess-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 2px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 1rem;
+}
+
+.guess-input:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+/* Action rows */
+.study-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.9rem;
+}
+
+.study-actions .btn {
+  border-radius: 10px;
+}
+
+/* Anki-style rating row (shown after the answer is revealed) */
+.rating-prompt {
+  margin-top: 1rem;
+  text-align: center;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.rating-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.btn-rate {
+  border-radius: 10px;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.btn-rate-again { background: #dc2626; }
+.btn-rate-hard { background: #d97706; }
+.btn-rate-good { background: #16a34a; }
+.btn-rate-easy { background: #2563eb; }
+
+.btn-rate:disabled {
+  opacity: 0.6;
+}
+
+/* Grade result banner */
+.grade-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.grade-result--ok {
+  background: #064e3b;
+}
+
+.grade-result--no {
+  background: #450a0a;
+}
+
+.grade-result-verdict {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.grade-result-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.grade-result-artists {
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+.grade-result-mastered {
+  margin-top: 0.5rem;
+  color: #c4b5fd;
+  font-weight: 700;
+}
+
+/* Tally */
+.study-tally {
+  margin-top: 1rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.tally-correct { color: #16a34a; }
+.tally-wrong { color: #dc2626; }
+.tally-mastered { color: #7c3aed; }
+.tally-sep { margin: 0 0.6rem; color: #cbd5e1; }
+
+/* Done screen */
+.study-done {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.study-done-emoji {
+  font-size: 3rem;
+}

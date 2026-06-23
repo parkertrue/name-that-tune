@@ -92,7 +92,7 @@ describe('LoginPage', () => {
   })
 
   describe('authentication redirect', () => {
-    it('should redirect to /notes if already authenticated', () => {
+    it('should redirect to /decks if already authenticated', () => {
       renderWithAuth(true)
       
       // Component should not render the form
@@ -280,7 +280,7 @@ describe('LoginPage', () => {
       })
     })
 
-    it('should navigate to /notes on successful login', async () => {
+    it('should navigate to /decks on successful login', async () => {
       const mockLogin = vi.fn()
       authService.loginUser.mockResolvedValue({
         access_token: 'test-token',
@@ -298,7 +298,7 @@ describe('LoginPage', () => {
       fireEvent.submit(form)
       
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/notes')
+        expect(mockNavigate).toHaveBeenCalledWith('/decks')
       })
     })
 

@@ -4,9 +4,10 @@ import nh3
 class InputSanitizer:
 
     @staticmethod
-    def sanitize_note_content(content: str, max_length: int = 256) -> str:
-        if not isinstance(content, str):
+    def sanitize_text(value: str, max_length: int = 256) -> str:
+        """Strip null bytes and all HTML, truncate, and trim whitespace."""
+        if not isinstance(value, str):
             return ""
-        content = content.replace('\x00', '')[:max_length]
-        content = nh3.clean(content, tags=set())
-        return content.strip()
+        value = value.replace('\x00', '')[:max_length]
+        value = nh3.clean(value, tags=set())
+        return value.strip()

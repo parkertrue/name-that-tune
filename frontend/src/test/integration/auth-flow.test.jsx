@@ -6,8 +6,13 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import App from '../../App'
 
-// Create MSW server for this test file
-const server = setupServer()
+// Create MSW server for this test file. The "All Songs" summary is fetched
+// alongside the deck list, so provide a default handler the tests can rely on.
+const server = setupServer(
+  http.get('/api/decks/all', () =>
+    HttpResponse.json({ total: 0, mastered: 0, active: 0 }, { status: 200 })
+  )
+)
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'warn' })
@@ -112,15 +117,15 @@ describe('Authentication Flow Integration Tests', () => {
   })
 
   describe('Login Flow', () => {
-    it('should login and load user notes', async () => {
+    it('should login and load user decks', async () => {
       const user = userEvent.setup()
 
-      const mockNotes = [
-        { id: 1, content: 'First note', user_id: 1, created_at: '2024-01-01T00:00:00Z' },
-        { id: 2, content: 'Second note', user_id: 1, created_at: '2024-01-02T00:00:00Z' }
+      const mockDecks = [
+        { id: 1, name: 'First deck', created_at: '2024-01-01T00:00:00Z', total: 3, mastered: 0, active: 3 },
+        { id: 2, name: 'Second deck', created_at: '2024-01-02T00:00:00Z', total: 1, mastered: 1, active: 0 }
       ]
 
-      // Mock successful login and notes fetch
+      // Mock successful login and decks fetch
       server.use(
         http.post('/api/auth/login', () => {
           return HttpResponse.json(
@@ -131,7 +136,7 @@ describe('Authentication Flow Integration Tests', () => {
             { status: 200 }
           )
         }),
-        http.get('/api/notes', ({ request }) => {
+        http.get('/api/decks', ({ request }) => {
           const authHeader = request.headers.get('authorization')
           if (!authHeader) {
             return HttpResponse.json(
@@ -139,7 +144,7 @@ describe('Authentication Flow Integration Tests', () => {
               { status: 401 }
             )
           }
-          return HttpResponse.json(mockNotes, { status: 200 })
+          return HttpResponse.json(mockDecks, { status: 200 })
         })
       )
 
@@ -158,11 +163,11 @@ describe('Authentication Flow Integration Tests', () => {
       await user.type(passwordInput, 'Password123')
       await user.click(loginButton)
 
-      // Should display notes
+      // Should display decks (name appears in the card and the import select)
       await waitFor(() => {
-        expect(screen.getByText('First note')).toBeInTheDocument()
+        expect(screen.getAllByText('First deck').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
-      expect(screen.getByText('Second note')).toBeInTheDocument()
+      expect(screen.getAllByText('Second deck').length).toBeGreaterThan(0)
     })
 
     it('should show error on invalid credentials', async () => {
@@ -206,44 +211,46 @@ describe('Authentication Flow Integration Tests', () => {
     })
   })
 
-  describe('Notes CRUD Operations', () => {
-    it('should create a new note', async () => {
+  describe('Deck Operations', () => {
+    it('should create a new deck', async () => {
       const user = userEvent.setup()
 
       // Mock authenticated session
       localStorage.setItem('access_token', 'mock-token')
 
       server.use(
-        http.get('/api/notes', () => {
+        http.get('/api/decks', () => {
           return HttpResponse.json([], { status: 200 })
         }),
-        http.post('/api/notes', async ({ request }) => {
+        http.post('/api/decks', async ({ request }) => {
           const body = await request.json()
           return HttpResponse.json(
             {
               id: 1,
-              content: body.content,
-              user_id: 1,
-              created_at: new Date().toISOString()
+              name: body.name,
+              created_at: new Date().toISOString(),
+              total: 0,
+              mastered: 0,
+              active: 0
             },
             { status: 201 }
           )
         })
       )
 
-      renderAppAt('/notes')
+      renderAppAt('/decks')
 
-      // Wait for notes page to load and empty state to appear
+      // Wait for decks page to load and empty state to appear
       await waitFor(() => {
-        expect(screen.getByText(/no notes yet/i)).toBeInTheDocument()
+        expect(screen.getByText(/no decks yet/i)).toBeInTheDocument()
       })
 
-      // Create a note - use testid for the button since text changes
-      const noteInput = screen.getByPlaceholderText(/write a note/i)
-      const addButton = screen.getByTestId('note-submit')
+      // Create a deck - use testid for the button since text changes
+      const deckInput = screen.getByTestId('deck-name-input')
+      const addButton = screen.getByTestId('deck-submit')
 
-      await user.type(noteInput, 'My new test note')
-      
+      await user.type(deckInput, 'My new deck')
+
       // Wait for button to be enabled (it's disabled when input is empty)
       await waitFor(() => {
         expect(addButton).not.toBeDisabled()
@@ -251,9 +258,9 @@ describe('Authentication Flow Integration Tests', () => {
 
       await user.click(addButton)
 
-      // Should display the new note
+      // Should display the new deck
       await waitFor(() => {
-        expect(screen.getByText('My new test note')).toBeInTheDocument()
+        expect(screen.getAllByText('My new deck').length).toBeGreaterThan(0)
       })
     })
   })
@@ -263,28 +270,28 @@ describe('Authentication Flow Integration Tests', () => {
       // Mock authenticated session
       localStorage.setItem('access_token', 'mock-token')
 
-      const mockNotes = [
-        { id: 1, content: 'Persisted note', user_id: 1, created_at: '2024-01-01T00:00:00Z' }
+      const mockDecks = [
+        { id: 1, name: 'Persisted deck', created_at: '2024-01-01T00:00:00Z', total: 2, mastered: 0, active: 2 }
       ]
 
       server.use(
-        http.get('/api/notes', () => {
-          return HttpResponse.json(mockNotes, { status: 200 })
+        http.get('/api/decks', () => {
+          return HttpResponse.json(mockDecks, { status: 200 })
         })
       )
 
-      renderAppAt('/notes')
+      renderAppAt('/decks')
 
-      // Should load notes without requiring login
+      // Should load decks without requiring login
       await waitFor(() => {
-        expect(screen.getByText('Persisted note')).toBeInTheDocument()
+        expect(screen.getAllByText('Persisted deck').length).toBeGreaterThan(0)
       })
     })
 
     it('should redirect to login when token is missing', async () => {
       // No token in localStorage
       server.use(
-        http.get('/api/notes', () => {
+        http.get('/api/decks', () => {
           return HttpResponse.json(
             { error: { code: 'AUTH_MISSING_TOKEN', message: 'No token provided' } },
             { status: 401 }
@@ -292,7 +299,7 @@ describe('Authentication Flow Integration Tests', () => {
         })
       )
 
-      renderAppAt('/notes')
+      renderAppAt('/decks')
 
       // Should show login form or redirect message
       await waitFor(() => {

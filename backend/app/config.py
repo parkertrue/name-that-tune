@@ -6,17 +6,17 @@ class Config:
     """Base configuration"""
 
     def __init__(self):
-        self.FLASK_DEBUG = os.getenv('FLASK_DEBUG', False)
+        self.FLASK_DEBUG = os.getenv('FLASK_DEBUG', '0').lower() in ('1', 'true')
         self.CORS_ORIGINS = None
 
         # Database configuration
         self.DB_USER = os.getenv('MYSQL_USER')
         self.DB_PASSWORD = os.getenv('MYSQL_PASSWORD')
         self.DB_HOST = os.getenv('MYSQL_HOST')
-        self.DB_PORT = 3306
+        self.DB_PORT = int(os.getenv('MYSQL_PORT', '3306'))
         self.DB_DATABASE = os.getenv('MYSQL_DATABASE')
 
-        if not all([self.DB_USER, self.DB_PASSWORD, self.DB_HOST, self.DB_DATABASE]):
+        if not all([self.DB_USER, self.DB_PASSWORD, self.DB_HOST, self.DB_PORT, self.DB_DATABASE]):
             raise ValueError("Missing required MySQL environment variables")
 
         self.SQLALCHEMY_DATABASE_URI = (
@@ -27,12 +27,12 @@ class Config:
         # Redis configuration
         self.REDIS_ENABLED = True
         self.REDIS_HOST = os.getenv('REDIS_HOST')
-        self.REDIS_PORT = 6379
+        self.REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
         self.REDIS_DB = os.getenv('REDIS_DB')
         self.REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
         self.REDIS_MAX_CONNECTIONS = 50
 
-        if not all([self.REDIS_HOST, self.REDIS_DB, self.REDIS_PASSWORD]):
+        if not all([self.REDIS_HOST, self.REDIS_PORT, self.REDIS_DB, self.REDIS_PASSWORD]):
             raise ValueError("Missing required Redis environment variables")
 
         self.REDIS_URI = (
@@ -83,6 +83,25 @@ class TestingConfig(Config):
         self.RATELIMIT_ENABLED = False
 
 
+class IntegrationConfig(Config):
+    """Integration/E2E testing configuration"""
+
+    def __init__(self, e2e_mode=False):
+        super().__init__()
+        self.FLASK_ENV = "integration"
+        self.RATELIMIT_ENABLED = False
+        self.CORS_ORIGINS = [
+            "http://localhost:5173",
+            "https://localhost",
+            "https://localhost:8443",
+        ]
+        self.JWT_COOKIE_SECURE = os.getenv(
+            'E2E_MODE', 'false').lower() == 'true'
+        # CSRF protection is browser-only; disable for API integration tests
+        self.JWT_COOKIE_CSRF_PROTECT = os.getenv(
+            'E2E_MODE', 'false').lower() == 'true'
+
+
 class ProductionConfig(Config):
     """Production configuration"""
 
@@ -93,32 +112,18 @@ class ProductionConfig(Config):
         self.JWT_COOKIE_SECURE = True
 
 
-class E2EConfig(Config):
-    """E2E Testing configuration"""
-
-    def __init__(self):
-        super().__init__()
-        self.FLASK_ENV = "e2e"
-        self.JWT_COOKIE_SECURE = True
-        self.RATELIMIT_ENABLED = False
-        self.CORS_ORIGINS = ["https://localhost"]
-
-
 def get_config():
     """Get configuration based on environment"""
     flask_env = os.getenv('FLASK_ENV', 'production')
-    e2e_mode = os.getenv('E2E_MODE', 'false').lower() == 'true'
 
-    if flask_env not in ["development", "testing", "production"]:
+    if flask_env not in ["development", "testing", "integration", "production"]:
         raise ValueError(
-            f'FLASK_ENV must be one of: development, testing, production. Got: {flask_env}')
-
-    if e2e_mode and flask_env == 'production':
-        return E2EConfig()
+            f'FLASK_ENV must be one of: development, testing, integration, production. Got: {flask_env}')
 
     config_map = {
         'development': DevelopmentConfig,
         'testing': TestingConfig,
+        'integration': IntegrationConfig,
         'production': ProductionConfig,
     }
 

@@ -20,7 +20,7 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   if (isAuthenticated) {
-    return <Navigate to="/notes" replace />
+    return <Navigate to="/decks" replace />
   }
 
   const handleSubmit = async (e) => {
@@ -44,7 +44,7 @@ export default function LoginPage() {
     try {
       const data = await loginUser(email, password)
       login(data.access_token, data.refresh_csrf, email)
-      navigate('/notes')
+      navigate('/decks')
     } catch (err) {
       setErrors({ general: getErrorMessage(err) })
     } finally {

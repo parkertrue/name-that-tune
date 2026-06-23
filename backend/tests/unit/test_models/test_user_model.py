@@ -184,38 +184,33 @@ class TestPasswordHashing:
 class TestUserRelationships:
     """Test User model relationships."""
 
-    def test_user_notes_relationship(self, db, sample_user):
-        """User should have relationship with notes."""
-        from app.models import Note
+    def test_user_decks_relationship(self, db, sample_user):
+        """User should have relationship with decks."""
+        from app.models import Deck
 
-        note1 = Note(user_id=sample_user.id, content='Note 1')
-        note2 = Note(user_id=sample_user.id, content='Note 2')
-        db.session.add_all([note1, note2])
+        deck1 = Deck(user_id=sample_user.id, name='Deck 1')
+        deck2 = Deck(user_id=sample_user.id, name='Deck 2')
+        db.session.add_all([deck1, deck2])
         db.session.commit()
         db.session.refresh(sample_user)
 
-        assert len(sample_user.notes) == 2
-        assert note1 in sample_user.notes
-        assert note2 in sample_user.notes
+        assert len(sample_user.decks) == 2
+        assert deck1 in sample_user.decks
+        assert deck2 in sample_user.decks
 
-    def test_user_deletion_cascade(self, db, sample_user):
-        """Test what happens to notes when user is deleted."""
-        from app.models import Note
+    def test_user_deletion_cascades_decks(self, db, sample_user):
+        """Deleting a user should cascade-delete their decks."""
+        from app.models import Deck
 
-        note = Note(user_id=sample_user.id, content='Test note')
-        db.session.add(note)
+        deck = Deck(user_id=sample_user.id, name='Test Deck')
+        db.session.add(deck)
         db.session.commit()
-        note_id = note.id
+        deck_id = deck.id
 
-        # Delete user
         db.session.delete(sample_user)
         db.session.commit()
 
-        # Check if note still exists (depends on cascade setting)
-        # Current model doesn't specify cascade, so note becomes orphaned
-        # This documents current behavior
-        remaining_note = db.session.get(Note, note_id)
-        # Behavior depends on your foreign key cascade settings
+        assert db.session.get(Deck, deck_id) is None
 
 
 class TestUserQueries:

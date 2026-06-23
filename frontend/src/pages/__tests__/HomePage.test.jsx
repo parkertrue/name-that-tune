@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import HomePage from '../HomePage'
 import { AuthProvider } from '../../contexts/AuthContext'
 import { storage } from '../../utils/storage'
-import { checkHealth } from '../../api/services/healthService'
 
 vi.mock('../../utils/storage')
-vi.mock('../../api/services/healthService')
 
 describe('HomePage', () => {
   beforeEach(() => {
@@ -15,7 +13,6 @@ describe('HomePage', () => {
     storage.getAccessToken.mockReturnValue(null)
     storage.getRefreshCsrf.mockReturnValue(null)
     storage.getEmail.mockReturnValue(null)
-    checkHealth.mockResolvedValue({ status: 'healthy' })
   })
 
   const renderHomePage = () => {
@@ -32,54 +29,13 @@ describe('HomePage', () => {
     it('should render welcome heading', () => {
       renderHomePage()
 
-      expect(screen.getByText('Welcome to Flask + React + MySQL Template App')).toBeInTheDocument()
+      expect(screen.getByText('🎵 Name That Tune')).toBeInTheDocument()
     })
 
     it('should render description', () => {
       renderHomePage()
 
-      expect(screen.getByText(/A simple note-taking application with/)).toBeInTheDocument()
-    })
-
-    it('should render API status label', () => {
-      renderHomePage()
-
-      expect(screen.getByText(/API Status:/)).toBeInTheDocument()
-    })
-  })
-
-  describe('API health status', () => {
-    it('should display checking status initially', () => {
-      checkHealth.mockImplementation(() => new Promise(() => {}))
-      renderHomePage()
-
-      expect(screen.getByTestId('api-status')).toHaveTextContent('checking')
-    })
-
-    it('should display healthy status when API is healthy', async () => {
-      checkHealth.mockResolvedValue({ status: 'healthy' })
-      renderHomePage()
-
-      await waitFor(() => {
-        expect(screen.getByTestId('api-status')).toHaveTextContent('healthy')
-      })
-    })
-
-    it('should display error status when API check fails', async () => {
-      checkHealth.mockRejectedValue(new Error('Connection failed'))
-      renderHomePage()
-
-      await waitFor(() => {
-        expect(screen.getByTestId('api-status')).toHaveTextContent('error')
-      })
-    })
-
-    it('should call checkHealth on mount', async () => {
-      renderHomePage()
-
-      await waitFor(() => {
-        expect(checkHealth).toHaveBeenCalled()
-      })
+      expect(screen.getByText(/song-flashcard trainer/)).toBeInTheDocument()
     })
   })
 
@@ -110,7 +66,7 @@ describe('HomePage', () => {
     it('should not show authenticated actions', () => {
       renderHomePage()
 
-      expect(screen.queryByText('View My Notes')).not.toBeInTheDocument()
+      expect(screen.queryByText('View My Decks')).not.toBeInTheDocument()
     })
 
     it('should have correct button classes', () => {
@@ -137,12 +93,12 @@ describe('HomePage', () => {
       expect(authActions).toBeInTheDocument()
     })
 
-    it('should show View My Notes button', () => {
+    it('should show View My Decks button', () => {
       renderHomePage()
 
-      const notesBtn = screen.getByText('View My Notes')
-      expect(notesBtn).toBeInTheDocument()
-      expect(notesBtn).toHaveAttribute('href', '/notes')
+      const decksBtn = screen.getByText('View My Decks')
+      expect(decksBtn).toBeInTheDocument()
+      expect(decksBtn).toHaveAttribute('href', '/decks')
     })
 
     it('should not show guest actions', () => {
@@ -155,8 +111,8 @@ describe('HomePage', () => {
     it('should have correct button class', () => {
       renderHomePage()
 
-      const notesBtn = screen.getByText('View My Notes')
-      expect(notesBtn).toHaveClass('btn', 'btn-primary')
+      const decksBtn = screen.getByText('View My Decks')
+      expect(decksBtn).toHaveClass('btn', 'btn-primary')
     })
   })
 
@@ -173,13 +129,6 @@ describe('HomePage', () => {
 
       const content = container.querySelector('.home-content')
       expect(content).toBeInTheDocument()
-    })
-
-    it('should have api-status section', () => {
-      const { container } = renderHomePage()
-
-      const apiStatus = container.querySelector('.api-status')
-      expect(apiStatus).toBeInTheDocument()
     })
 
     it('should have home-actions section', () => {

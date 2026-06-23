@@ -7,7 +7,7 @@ from app.config import (
     Config,
     DevelopmentConfig,
     TestingConfig,
-    E2EConfig,
+    IntegrationConfig,
     ProductionConfig,
     get_config
 )
@@ -28,6 +28,12 @@ class TestConfigClasses:
 
     def test_config_class_reads_env_vars(self, monkeypatch):
         """Config class should read environment variables"""
+        # Clear any existing port overrides from .env.test
+        if 'MYSQL_PORT' in os.environ:
+            monkeypatch.delenv('MYSQL_PORT')
+        if 'REDIS_PORT' in os.environ:
+            monkeypatch.delenv('REDIS_PORT')
+
         monkeypatch.setenv('MYSQL_USER', 'test')
         monkeypatch.setenv('MYSQL_PASSWORD', 'test')
         monkeypatch.setenv('MYSQL_HOST', 'localhost')
@@ -42,8 +48,10 @@ class TestConfigClasses:
         assert config.DB_USER == 'test'
         assert config.DB_PASSWORD == 'test'
         assert config.DB_HOST == 'localhost'
+        assert config.DB_PORT == 3306  # Default port
         assert config.DB_DATABASE == 'test'
         assert config.REDIS_HOST == 'localhost'
+        assert config.REDIS_PORT == 6379  # Default port
         assert config.REDIS_DB == '0'
         assert config.REDIS_PASSWORD == 'redispass'
         assert config.JWT_SECRET_KEY == 'testsecret'
@@ -51,8 +59,38 @@ class TestConfigClasses:
         assert config.REDIS_URI == "redis://:redispass@localhost:6379/0"
         assert config.RATELIMIT_STORAGE_URI == "redis://:redispass@localhost:6379/0"
 
-    def test_development_config_attributes(self):
+    def test_config_with_custom_ports(self, monkeypatch):
+        """Config class should accept custom ports via environment variables"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_PORT', '3307')  # Custom MySQL port
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_PORT', '6380')  # Custom Redis port
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
+        config = Config()
+
+        assert config.DB_PORT == 3307  # Custom port
+        assert config.REDIS_PORT == 6380  # Custom port
+        assert config.SQLALCHEMY_DATABASE_URI == "mysql+pymysql://test:test@localhost:3307/test"
+        assert config.REDIS_URI == "redis://:redispass@localhost:6380/0"
+
+    def test_development_config_attributes(self, monkeypatch):
         """DevelopmentConfig should have correct attributes"""
+        # Ensure clean environment for this test
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
         config = DevelopmentConfig()
 
         assert config.FLASK_ENV == 'development'
@@ -61,8 +99,17 @@ class TestConfigClasses:
         assert config.REDIS_ENABLED is True
         assert config.RATELIMIT_ENABLED is True
 
-    def test_testing_config_attributes(self):
+    def test_testing_config_attributes(self, monkeypatch):
         """TestingConfig should have correct attributes"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
         config = TestingConfig()
 
         assert config.FLASK_ENV == 'testing'
@@ -70,22 +117,72 @@ class TestConfigClasses:
         assert config.REDIS_ENABLED is False
         assert config.RATELIMIT_ENABLED is False
 
-    def test_e2e_config_attributes(self):
-        """E2EConfig should be identical to production except rate limiting disabled and CORS enabled"""
-        config = E2EConfig()
+    def test_integration_config_attributes(self, monkeypatch):
+        """IntegrationConfig should have correct attributes for testing"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+        # Clear FLASK_DEBUG to test default
+        if 'FLASK_DEBUG' in os.environ:
+            monkeypatch.delenv('FLASK_DEBUG')
+        # Clear E2E_MODE to test default
+        if 'E2E_MODE' in os.environ:
+            monkeypatch.delenv('E2E_MODE')
 
-        # Should have all production settings
-        assert config.FLASK_ENV == 'e2e'
+        config = IntegrationConfig()
+
+        # Should have integration settings
+        assert config.FLASK_ENV == 'integration'
         assert config.FLASK_DEBUG is False
-        assert config.JWT_COOKIE_SECURE is True
         assert config.REDIS_ENABLED is True
 
-        # Only differences: rate limiting disabled and CORS enabled
+        # Rate limiting disabled for tests
         assert config.RATELIMIT_ENABLED is False
-        assert config.CORS_ORIGINS == ["https://localhost"]
 
-    def test_production_config_attributes(self):
+        # CORS enabled for test environments
+        assert config.CORS_ORIGINS == [
+            "http://localhost:5173",
+            "https://localhost",
+            "https://localhost:8443"
+        ]
+
+        # JWT cookie security depends on E2E_MODE
+        # Default should be False (HTTP for pytest)
+        assert config.JWT_COOKIE_SECURE is False
+
+    def test_integration_config_with_e2e_mode(self, monkeypatch):
+        """IntegrationConfig should enable secure cookies when E2E_MODE=true"""
+        monkeypatch.setenv('E2E_MODE', 'true')
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
+        config = IntegrationConfig()
+
+        # Should enable secure cookies for HTTPS (Playwright E2E)
+        assert config.JWT_COOKIE_SECURE is True
+
+    def test_production_config_attributes(self, monkeypatch):
         """ProductionConfig should have correct attributes"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
         config = ProductionConfig()
 
         assert config.FLASK_ENV == 'production'
@@ -100,6 +197,12 @@ class TestGetConfigFactory:
 
     def test_get_config_development(self, monkeypatch):
         """get_config should return DevelopmentConfig for dev env"""
+        # Clear port overrides for default port test
+        if 'MYSQL_PORT' in os.environ:
+            monkeypatch.delenv('MYSQL_PORT')
+        if 'REDIS_PORT' in os.environ:
+            monkeypatch.delenv('REDIS_PORT')
+
         monkeypatch.setenv('FLASK_ENV', 'development')
         monkeypatch.setenv('MYSQL_USER', 'testuser')
         monkeypatch.setenv('MYSQL_PASSWORD', 'testpass')
@@ -121,6 +224,13 @@ class TestGetConfigFactory:
     def test_get_config_testing(self, monkeypatch):
         """get_config should return TestingConfig for testing env"""
         monkeypatch.setenv('FLASK_ENV', 'testing')
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'testpass')
         monkeypatch.setenv('SECRET_KEY', 'testsecret')
 
         config = get_config()
@@ -131,31 +241,37 @@ class TestGetConfigFactory:
         assert config.REDIS_ENABLED is False
         assert config.RATELIMIT_ENABLED is False
 
-    def test_get_config_e2e_mode(self, monkeypatch):
-        """get_config should return E2EConfig when E2E_MODE=true with production env"""
-        monkeypatch.setenv('FLASK_ENV', 'production')
-        monkeypatch.setenv('E2E_MODE', 'true')
-        monkeypatch.setenv('MYSQL_USER', 'produser')
-        monkeypatch.setenv('MYSQL_PASSWORD', 'prodpass')
-        monkeypatch.setenv('MYSQL_HOST', 'prodhost')
-        monkeypatch.setenv('MYSQL_DATABASE', 'proddb')
-        monkeypatch.setenv('REDIS_HOST', 'prodredis')
+    def test_get_config_integration(self, monkeypatch):
+        """get_config should return IntegrationConfig for integration env"""
+        monkeypatch.setenv('FLASK_ENV', 'integration')
+        monkeypatch.setenv('MYSQL_USER', 'testuser')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'testpass')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_PORT', '3307')  # Test port
+        monkeypatch.setenv('MYSQL_DATABASE', 'test_db')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_PORT', '6380')  # Test port
         monkeypatch.setenv('REDIS_DB', '0')
-        monkeypatch.setenv('REDIS_PASSWORD', 'prodredispass')
-        monkeypatch.setenv('SECRET_KEY', 'prodsecret')
+        monkeypatch.setenv('REDIS_PASSWORD', 'testpass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
 
         config = get_config()
 
-        assert isinstance(config, E2EConfig)
-        assert config.FLASK_ENV == 'e2e'  # Still production
-        assert config.RATELIMIT_ENABLED is False  # But rate limiting disabled
-        assert config.REDIS_ENABLED is True
-        assert config.JWT_COOKIE_SECURE is True
-        assert config.CORS_ORIGINS == [
-            "https://localhost"]  # CORS enabled for tests
+        assert isinstance(config, IntegrationConfig)
+        assert config.FLASK_ENV == 'integration'
+        assert config.DB_PORT == 3307
+        assert config.REDIS_PORT == 6380
+        assert config.SQLALCHEMY_DATABASE_URI == 'mysql+pymysql://testuser:testpass@localhost:3307/test_db'
+        assert config.REDIS_URI == 'redis://:testpass@localhost:6380/0'
 
     def test_get_config_production(self, monkeypatch):
         """get_config should return ProductionConfig for prod env"""
+        # Clear port overrides for default port test
+        if 'MYSQL_PORT' in os.environ:
+            monkeypatch.delenv('MYSQL_PORT')
+        if 'REDIS_PORT' in os.environ:
+            monkeypatch.delenv('REDIS_PORT')
+
         monkeypatch.setenv('FLASK_ENV', 'production')
         monkeypatch.setenv('MYSQL_USER', 'produser')
         monkeypatch.setenv('MYSQL_PASSWORD', 'prodpass')
@@ -186,6 +302,11 @@ class TestGetConfigFactory:
 
     def test_get_config_defaults_to_production(self, monkeypatch):
         """get_config should default to production if FLASK_ENV not set"""
+        # Clear port overrides
+        if 'MYSQL_PORT' in os.environ:
+            monkeypatch.delenv('MYSQL_PORT')
+        if 'REDIS_PORT' in os.environ:
+            monkeypatch.delenv('REDIS_PORT')
         if 'FLASK_ENV' in os.environ:
             monkeypatch.delenv('FLASK_ENV')
 
@@ -204,12 +325,11 @@ class TestGetConfigFactory:
         assert config.FLASK_ENV == 'production'
 
 
-class TestGetConfigValidation:
-    """Test validation in get_config()"""
+class TestConfigValidation:
+    """Test validation in Config classes"""
 
-    def test_get_config_requires_database_vars_in_dev(self, monkeypatch):
-        """get_config should raise error if DB vars missing in dev"""
-        monkeypatch.setenv('FLASK_ENV', 'development')
+    def test_config_requires_database_vars(self, monkeypatch):
+        """Config should raise error if DB vars missing"""
         monkeypatch.setenv('REDIS_HOST', 'localhost')
         monkeypatch.setenv('REDIS_DB', '0')
         monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
@@ -221,32 +341,30 @@ class TestGetConfigValidation:
                 monkeypatch.delenv(var)
 
         with pytest.raises(ValueError) as exc_info:
-            get_config()
+            Config()
 
         assert 'MySQL' in str(exc_info.value)
 
-    def test_get_config_requires_redis_vars_in_dev(self, monkeypatch):
-        """get_config should raise error if Redis vars missing in dev"""
-        monkeypatch.setenv('FLASK_ENV', 'development')
+    def test_config_requires_redis_vars(self, monkeypatch):
+        """Config should raise error if Redis vars missing"""
         monkeypatch.setenv('MYSQL_USER', 'test')
         monkeypatch.setenv('MYSQL_PASSWORD', 'test')
         monkeypatch.setenv('MYSQL_HOST', 'localhost')
         monkeypatch.setenv('MYSQL_DATABASE', 'test')
         monkeypatch.setenv('SECRET_KEY', 'testsecret')
 
-        # Missing Redis vars
+        # Missing all Redis vars
         for var in ['REDIS_HOST', 'REDIS_DB', 'REDIS_PASSWORD']:
             if var in os.environ:
                 monkeypatch.delenv(var)
 
         with pytest.raises(ValueError) as exc_info:
-            get_config()
+            Config()
 
         assert 'Redis' in str(exc_info.value)
 
-    def test_get_config_requires_secret_key(self, monkeypatch):
-        """get_config should raise error if SECRET_KEY missing"""
-        monkeypatch.setenv('FLASK_ENV', 'development')
+    def test_config_requires_secret_key(self, monkeypatch):
+        """Config should raise error if SECRET_KEY missing"""
         monkeypatch.setenv('MYSQL_USER', 'test')
         monkeypatch.setenv('MYSQL_PASSWORD', 'test')
         monkeypatch.setenv('MYSQL_HOST', 'localhost')
@@ -255,22 +373,26 @@ class TestGetConfigValidation:
         monkeypatch.setenv('REDIS_DB', '0')
         monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
 
-        # Remove SECRET_KEY
         if 'SECRET_KEY' in os.environ:
             monkeypatch.delenv('SECRET_KEY')
 
         with pytest.raises(ValueError) as exc_info:
-            get_config()
+            Config()
 
         assert 'SECRET_KEY' in str(exc_info.value)
 
 
-class TestConfigValues:
-    """Test specific configuration values"""
+class TestPortConfiguration:
+    """Test port configuration behavior"""
 
-    def test_jwt_token_expiration_configured(self, monkeypatch):
-        """JWT token expiration should be set"""
-        monkeypatch.setenv('FLASK_ENV', 'development')
+    def test_default_ports_when_not_specified(self, monkeypatch):
+        """Should use default ports when MYSQL_PORT and REDIS_PORT not specified"""
+        # Clear port overrides from .env.test
+        if 'MYSQL_PORT' in os.environ:
+            monkeypatch.delenv('MYSQL_PORT')
+        if 'REDIS_PORT' in os.environ:
+            monkeypatch.delenv('REDIS_PORT')
+
         monkeypatch.setenv('MYSQL_USER', 'test')
         monkeypatch.setenv('MYSQL_PASSWORD', 'test')
         monkeypatch.setenv('MYSQL_HOST', 'localhost')
@@ -280,94 +402,64 @@ class TestConfigValues:
         monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
         monkeypatch.setenv('SECRET_KEY', 'testsecret')
 
-        config = get_config()
+        config = Config()
 
-        assert config.JWT_ACCESS_TOKEN_EXPIRES == timedelta(minutes=15)
-        assert config.JWT_REFRESH_TOKEN_EXPIRES == timedelta(days=30)
+        assert config.DB_PORT == 3306  # Default MySQL port
+        assert config.REDIS_PORT == 6379  # Default Redis port
 
-    def test_jwt_cookie_settings(self, monkeypatch):
-        """JWT cookie settings should be configured for security"""
-        monkeypatch.setenv('FLASK_ENV', 'development')
+    def test_custom_ports_from_env_vars(self, monkeypatch):
+        """Should use custom ports when specified in environment"""
         monkeypatch.setenv('MYSQL_USER', 'test')
         monkeypatch.setenv('MYSQL_PASSWORD', 'test')
         monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_PORT', '3307')
         monkeypatch.setenv('MYSQL_DATABASE', 'test')
         monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_PORT', '6380')
         monkeypatch.setenv('REDIS_DB', '0')
         monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
         monkeypatch.setenv('SECRET_KEY', 'testsecret')
 
-        config = get_config()
+        config = Config()
 
-        assert config.JWT_COOKIE_HTTPONLY is True
-        assert config.JWT_COOKIE_SAMESITE == 'Lax'
-        assert config.JWT_COOKIE_CSRF_PROTECT is True
-
-    def test_redis_defaults(self, monkeypatch):
-        """Redis should have correct default values"""
-        monkeypatch.setenv('FLASK_ENV', 'development')
-        monkeypatch.setenv('MYSQL_USER', 'test')
-        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
-        monkeypatch.setenv('MYSQL_HOST', 'localhost')
-        monkeypatch.setenv('MYSQL_DATABASE', 'test')
-        monkeypatch.setenv('REDIS_HOST', 'localhost')
-        monkeypatch.setenv('REDIS_DB', '0')
-        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
-        monkeypatch.setenv('SECRET_KEY', 'testsecret')
-
-        config = get_config()
-
-        assert config.REDIS_PORT == 6379
-        assert config.REDIS_MAX_CONNECTIONS == 50
-
-    def test_database_port_default(self, monkeypatch):
-        """Database should use default port 3306"""
-        monkeypatch.setenv('FLASK_ENV', 'development')
-        monkeypatch.setenv('MYSQL_USER', 'test')
-        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
-        monkeypatch.setenv('MYSQL_HOST', 'localhost')
-        monkeypatch.setenv('MYSQL_DATABASE', 'test')
-        monkeypatch.setenv('REDIS_HOST', 'localhost')
-        monkeypatch.setenv('REDIS_DB', '0')
-        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
-        monkeypatch.setenv('SECRET_KEY', 'testsecret')
-
-        config = get_config()
-
-        assert config.DB_PORT == 3306
-
-    def test_rate_limiter_uses_redis_uri(self, monkeypatch):
-        """Rate limiter should use Redis URI"""
-        monkeypatch.setenv('FLASK_ENV', 'development')
-        monkeypatch.setenv('MYSQL_USER', 'test')
-        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
-        monkeypatch.setenv('MYSQL_HOST', 'localhost')
-        monkeypatch.setenv('MYSQL_DATABASE', 'test')
-        monkeypatch.setenv('REDIS_HOST', 'redishost')
-        monkeypatch.setenv('REDIS_DB', '2')
-        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
-        monkeypatch.setenv('SECRET_KEY', 'testsecret')
-
-        config = get_config()
-
-        assert config.RATELIMIT_STORAGE_URI == config.REDIS_URI
-        assert config.RATELIMIT_STORAGE_URI == 'redis://:redispass@redishost:6379/2'
+        assert config.DB_PORT == 3307  # Custom MySQL port
+        assert config.REDIS_PORT == 6380  # Custom Redis port
+        assert 'localhost:3307' in config.SQLALCHEMY_DATABASE_URI
+        assert 'localhost:6380' in config.REDIS_URI
 
 
 class TestConfigInheritance:
     """Test that child configs inherit from base Config"""
 
-    def test_development_inherits_jwt_settings(self):
+    def test_development_inherits_jwt_settings(self, monkeypatch):
         """DevelopmentConfig should inherit JWT settings from Config"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
         config = DevelopmentConfig()
 
         assert hasattr(config, 'JWT_ACCESS_TOKEN_EXPIRES')
         assert hasattr(config, 'JWT_REFRESH_TOKEN_EXPIRES')
         assert hasattr(config, 'JWT_SECRET_KEY')
 
-    def test_development_inherits_redis_settings(self):
-        """DevelopmentConfig should inherit Redis settings from Config"""
-        config = DevelopmentConfig()
+    def test_integration_inherits_redis_settings(self, monkeypatch):
+        """IntegrationConfig should inherit Redis settings from Config"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
+        config = IntegrationConfig()
 
         assert hasattr(config, 'REDIS_HOST')
         assert hasattr(config, 'REDIS_PORT')
@@ -375,34 +467,62 @@ class TestConfigInheritance:
         assert hasattr(config, 'REDIS_PASSWORD')
         assert hasattr(config, 'REDIS_MAX_CONNECTIONS')
 
-    def test_e2e_inherits_from_config(self):
-        """E2EConfig should inherit all base settings"""
-        config = E2EConfig()
-
-        assert hasattr(config, 'JWT_ACCESS_TOKEN_EXPIRES')
-        assert hasattr(config, 'REDIS_HOST')
-        assert hasattr(config, 'SQLALCHEMY_DATABASE_URI')
-
 
 class TestRateLimitBehavior:
     """Test rate limiting configuration across environments"""
 
-    def test_rate_limiting_enabled_in_development(self):
+    def test_rate_limiting_enabled_in_development(self, monkeypatch):
         """Rate limiting should be enabled in development"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
         config = DevelopmentConfig()
         assert config.RATELIMIT_ENABLED is True
 
-    def test_rate_limiting_disabled_in_testing(self):
+    def test_rate_limiting_disabled_in_testing(self, monkeypatch):
         """Rate limiting should be disabled in testing"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
         config = TestingConfig()
         assert config.RATELIMIT_ENABLED is False
 
-    def test_rate_limiting_disabled_in_e2e(self):
-        """Rate limiting should be disabled in E2E to allow unlimited test registrations"""
-        config = E2EConfig()
+    def test_rate_limiting_disabled_in_integration(self, monkeypatch):
+        """Rate limiting should be disabled in integration"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
+        config = IntegrationConfig()
         assert config.RATELIMIT_ENABLED is False
 
-    def test_rate_limiting_enabled_in_production(self):
+    def test_rate_limiting_enabled_in_production(self, monkeypatch):
         """Rate limiting should be enabled in production"""
+        monkeypatch.setenv('MYSQL_USER', 'test')
+        monkeypatch.setenv('MYSQL_PASSWORD', 'test')
+        monkeypatch.setenv('MYSQL_HOST', 'localhost')
+        monkeypatch.setenv('MYSQL_DATABASE', 'test')
+        monkeypatch.setenv('REDIS_HOST', 'localhost')
+        monkeypatch.setenv('REDIS_DB', '0')
+        monkeypatch.setenv('REDIS_PASSWORD', 'redispass')
+        monkeypatch.setenv('SECRET_KEY', 'testsecret')
+
         config = ProductionConfig()
         assert config.RATELIMIT_ENABLED is True

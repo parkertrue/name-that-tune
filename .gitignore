@@ -8,6 +8,7 @@ node_modules/
 # Environment Files
 .env.dev
 .env.prod
+.env.test
 
 # Testing
 .coverage
@@ -21,3 +22,5 @@ nginx/certs/
 
 # Dev Workspace
 temp/
+.vscode/
+.claude/settings.local.json

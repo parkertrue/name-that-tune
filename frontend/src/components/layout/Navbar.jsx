@@ -15,7 +15,7 @@ export default function Navbar() {
       <div className="navbar-container">
         <div className="navbar-links">
           {isAuthenticated && isHome && (
-            <Link to="/notes" className="nav-link">My Notes</Link>
+            <Link to="/decks" className="nav-link">My Decks</Link>
           )}
 
           {!isHome && (

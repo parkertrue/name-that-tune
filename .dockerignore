@@ -8,6 +8,7 @@ node_modules/
 # Environment Files
 .env.dev
 .env.prod
+.env.test
 .env.examples
 
 # Testing
@@ -38,3 +39,6 @@ nginx/certs/
 
 # Dev Workspace
 temp/
+.vscode/
+.claude/
+CLAUDE.md

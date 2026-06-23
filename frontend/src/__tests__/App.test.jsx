@@ -19,8 +19,16 @@ vi.mock('../pages/RegisterPage', () => ({
   default: () => <div data-testid="register-page">Register Page</div>
 }))
 
-vi.mock('../pages/NotesPage', () => ({
-  default: () => <div data-testid="notes-page">Notes Page</div>
+vi.mock('../pages/DecksPage', () => ({
+  default: () => <div data-testid="decks-page">Decks Page</div>
+}))
+
+vi.mock('../pages/DeckDashboardPage', () => ({
+  default: () => <div data-testid="deck-dashboard-page">Deck Dashboard Page</div>
+}))
+
+vi.mock('../pages/StudyPage', () => ({
+  default: () => <div data-testid="study-page">Study Page</div>
 }))
 
 describe('App', () => {
@@ -62,16 +70,28 @@ describe('App', () => {
       expect(screen.getByTestId('register-page')).toBeInTheDocument()
     })
 
-    it('should render notes page at /notes with protected route', () => {
+    it('should render decks page at /decks with protected route', () => {
       storage.getAccessToken.mockReturnValue('token')
-      
+
       render(
-        <MemoryRouter initialEntries={['/notes']}>
+        <MemoryRouter initialEntries={['/decks']}>
           <App />
         </MemoryRouter>
       )
 
-      expect(screen.getByTestId('notes-page')).toBeInTheDocument()
+      expect(screen.getByTestId('decks-page')).toBeInTheDocument()
+    })
+
+    it('should render study page at /study/:deckId with protected route', () => {
+      storage.getAccessToken.mockReturnValue('token')
+
+      render(
+        <MemoryRouter initialEntries={['/study/all']}>
+          <App />
+        </MemoryRouter>
+      )
+
+      expect(screen.getByTestId('study-page')).toBeInTheDocument()
     })
 
     it('should redirect unknown paths to home', () => {

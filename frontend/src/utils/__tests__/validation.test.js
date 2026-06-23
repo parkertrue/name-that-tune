@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest'
 import {
   validatePassword,
   validateEmail,
-  validateNoteContent,
+  validateDeckName,
   validatePasswordMatch,
   PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
   EMAIL_MAX_LENGTH,
-  NOTE_MIN_LENGTH,
-  NOTE_MAX_LENGTH
+  DECK_NAME_MIN_LENGTH,
+  DECK_NAME_MAX_LENGTH
 } from '../validation'
 
 
@@ -205,87 +205,87 @@ describe('validateEmail', () => {
   })
 })
 
-describe('validateNoteContent', () => {
-  describe('valid note content', () => {
-    it('should accept note with single character', () => {
-      const errors = validateNoteContent('a')
+describe('validateDeckName', () => {
+  describe('valid deck name', () => {
+    it('should accept name with single character', () => {
+      const errors = validateDeckName('a')
       expect(errors).toHaveLength(0)
     })
 
-    it('should accept note with multiple words', () => {
-      const errors = validateNoteContent('This is a note')
+    it('should accept name with multiple words', () => {
+      const errors = validateDeckName('80s Rock Classics')
       expect(errors).toHaveLength(0)
     })
 
-    it('should accept note at maximum length', () => {
-      const maxNote = 'a'.repeat(NOTE_MAX_LENGTH)
-      const errors = validateNoteContent(maxNote)
+    it('should accept name at maximum length', () => {
+      const maxName = 'a'.repeat(DECK_NAME_MAX_LENGTH)
+      const errors = validateDeckName(maxName)
       expect(errors).toHaveLength(0)
     })
 
-    it('should accept note with special characters', () => {
-      const errors = validateNoteContent('Note with @#$% special chars!')
+    it('should accept name with special characters', () => {
+      const errors = validateDeckName('Deck with @#$% special chars!')
       expect(errors).toHaveLength(0)
     })
 
-    it('should accept note with numbers', () => {
-      const errors = validateNoteContent('Note 123')
+    it('should accept name with numbers', () => {
+      const errors = validateDeckName('Round 123')
       expect(errors).toHaveLength(0)
     })
 
-    it('should accept note with leading/trailing spaces when trimmed', () => {
-      const errors = validateNoteContent('  Valid note  ')
+    it('should accept name with leading/trailing spaces when trimmed', () => {
+      const errors = validateDeckName('  Valid deck  ')
       expect(errors).toHaveLength(0)
     })
   })
 
-  describe('invalid note content', () => {
-    it('should reject empty note', () => {
-      const errors = validateNoteContent('')
+  describe('invalid deck name', () => {
+    it('should reject empty name', () => {
+      const errors = validateDeckName('')
       expect(errors).toHaveLength(1)
-      expect(errors[0]).toBe('Note content is required')
+      expect(errors[0]).toBe('Deck name is required')
     })
 
-    it('should reject undefined note', () => {
-      const errors = validateNoteContent(undefined)
+    it('should reject undefined name', () => {
+      const errors = validateDeckName(undefined)
       expect(errors).toHaveLength(1)
-      expect(errors[0]).toBe('Note content is required')
+      expect(errors[0]).toBe('Deck name is required')
     })
 
-    it('should reject null note', () => {
-      const errors = validateNoteContent(null)
+    it('should reject null name', () => {
+      const errors = validateDeckName(null)
       expect(errors).toHaveLength(1)
-      expect(errors[0]).toBe('Note content is required')
+      expect(errors[0]).toBe('Deck name is required')
     })
 
-    it('should reject note with only spaces', () => {
-      const errors = validateNoteContent('   ')
+    it('should reject name with only spaces', () => {
+      const errors = validateDeckName('   ')
       expect(errors).toHaveLength(1)
-      expect(errors[0]).toBe('Note content is required')
+      expect(errors[0]).toBe('Deck name is required')
     })
 
-    it('should reject note with only tabs', () => {
-      const errors = validateNoteContent('\t\t\t')
+    it('should reject name with only tabs', () => {
+      const errors = validateDeckName('\t\t\t')
       expect(errors).toHaveLength(1)
-      expect(errors[0]).toBe('Note content is required')
+      expect(errors[0]).toBe('Deck name is required')
     })
 
-    it('should reject note with only newlines', () => {
-      const errors = validateNoteContent('\n\n\n')
+    it('should reject name with only newlines', () => {
+      const errors = validateDeckName('\n\n\n')
       expect(errors).toHaveLength(1)
-      expect(errors[0]).toBe('Note content is required')
+      expect(errors[0]).toBe('Deck name is required')
     })
 
-    it('should reject note longer than maximum length', () => {
-      const longNote = 'a'.repeat(NOTE_MAX_LENGTH + 1)
-      const errors = validateNoteContent(longNote)
-      expect(errors).toContain(`Note must be at most ${NOTE_MAX_LENGTH} characters`)
+    it('should reject name longer than maximum length', () => {
+      const longName = 'a'.repeat(DECK_NAME_MAX_LENGTH + 1)
+      const errors = validateDeckName(longName)
+      expect(errors).toContain(`Deck name must be at most ${DECK_NAME_MAX_LENGTH} characters`)
     })
 
-    it('should reject note with only whitespace characters', () => {
-      const errors = validateNoteContent('  \n\t  ')
+    it('should reject name with only whitespace characters', () => {
+      const errors = validateDeckName('  \n\t  ')
       expect(errors).toHaveLength(1)
-      expect(errors[0]).toBe('Note content is required')
+      expect(errors[0]).toBe('Deck name is required')
     })
   })
 })
@@ -362,8 +362,8 @@ describe('constants', () => {
     expect(EMAIL_MAX_LENGTH).toBe(128)
   })
 
-  it('should export correct note constraints', () => {
-    expect(NOTE_MIN_LENGTH).toBe(1)
-    expect(NOTE_MAX_LENGTH).toBe(256)
+  it('should export correct deck name constraints', () => {
+    expect(DECK_NAME_MIN_LENGTH).toBe(1)
+    expect(DECK_NAME_MAX_LENGTH).toBe(100)
   })
 })

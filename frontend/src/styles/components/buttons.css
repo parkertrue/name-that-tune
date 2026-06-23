@@ -1,8 +1,17 @@
 .btn {
-  padding: 0.75rem 1.5rem;
+  display: inline-block;
+  padding: 0.8rem 1.6rem;
   border: none;
   cursor: pointer;
   font-size: 1rem;
+  font-weight: 600;
+  border-radius: 999px;
+  transition: transform var(--transition), box-shadow var(--transition),
+    background-color var(--transition);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
 }
 
 .btn:disabled {
@@ -11,19 +20,45 @@
 }
 
 .btn-primary {
-  background-color: #3498db;
+  background-color: var(--brand);
   color: white;
+  box-shadow: 0 6px 18px var(--brand-glow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--brand-dark);
+  box-shadow: 0 10px 26px var(--brand-glow);
 }
 
 .btn-secondary {
-  background-color: #95a5a6;
-  color: white;
+  background-color: #eceff1;
+  color: var(--ink-soft);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #dfe4e7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: background-color var(--transition);
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: none;
+  }
 }
 
 .btn-logout {
-  background-color: #e74c3c;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   color: white;
   padding: 0.5rem 1rem;
+}
+
+.btn-logout:hover:not(:disabled) {
+  background-color: var(--brand);
+  border-color: var(--brand);
 }
 
 .btn-block {

@@ -97,9 +97,9 @@ describe('RegisterPage', () => {
   })
 
   describe('authentication redirect', () => {
-    it('should redirect to /notes if already authenticated', () => {
+    it('should redirect to /decks if already authenticated', () => {
       renderWithAuth(true)
-      
+
       expect(screen.queryByTestId('register-form')).not.toBeInTheDocument()
     })
 

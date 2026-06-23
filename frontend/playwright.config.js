@@ -2,14 +2,14 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: false, // Run tests sequentially to avoid conflicts
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1, // Single worker to prevent database conflicts
+  workers: 1,
   reporter: 'html',
   
   use: {
-    baseURL: 'https://localhost',
+    baseURL: 'https://localhost:8443',
     ignoreHTTPSErrors: true, // Allow self-signed cert
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -23,10 +23,14 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'E2E_MODE=true docker compose --env-file .env.prod up',
-    url: 'https://localhost/api/health',
+    command: 'docker compose --env-file .env.test -f docker-compose.test.yml --profile e2e up',
+    cwd: '..',
+    url: 'https://localhost:8443/api/health',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
     ignoreHTTPSErrors: true,
+    env: {
+      E2E_MODE: 'true'
+    }
   },
 })
