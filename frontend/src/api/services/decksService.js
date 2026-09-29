@@ -26,6 +26,12 @@ export async function deleteDeck(id) {
   await api.delete(`/decks/${id}`)
 }
 
+// Delete a single track (one deck's copy of a song). The song leaves the
+// virtual "All Songs" scope unless another deck still holds a copy.
+export async function deleteTrack(trackId) {
+  await api.delete(`/decks/tracks/${trackId}`)
+}
+
 export async function importTracks(deckId, tracks) {
   const response = await api.post(`/decks/${deckId}/tracks`, { tracks })
   return response.data

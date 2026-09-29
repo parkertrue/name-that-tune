@@ -91,4 +91,27 @@ test.describe('Study Flow', () => {
     await page.reload()
     await expect(page.getByTestId('mastery-dashboard')).toBeVisible({ timeout: 5000 })
   })
+
+  test('delete a song from the deck dashboard', async () => {
+    await page.goto('/decks')
+    const deckCard = page.getByTestId('deck-card').first()
+    await deckCard.getByRole('link', { name: /dashboard/i }).click()
+    await expect(page.getByTestId('mastery-dashboard')).toBeVisible({ timeout: 5000 })
+
+    const rowsBefore = await page.getByTestId('track-row').count()
+    expect(rowsBefore).toBeGreaterThan(0)
+
+    // Deletion is guarded by window.confirm.
+    page.once('dialog', (dialog) => dialog.accept())
+    await page.getByTestId('track-delete').first().click()
+
+    await expect(page.getByTestId('track-row'))
+      .toHaveCount(rowsBefore - 1, { timeout: 5000 })
+
+    // The delete is server-side, so it must survive a reload rather than just
+    // disappearing from local state.
+    await page.reload()
+    await expect(page.getByTestId('mastery-dashboard')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByTestId('track-row')).toHaveCount(rowsBefore - 1)
+  })
 })

@@ -124,6 +124,41 @@ describe('useStudySession', () => {
     await waitFor(() => expect(result.current.card.track_id).toBe(11))
   })
 
+  it('deleteCurrent removes the song and advances', async () => {
+    decksService.studyNext
+      .mockResolvedValueOnce(sampleCard)
+      .mockResolvedValueOnce({ ...sampleCard, track_id: 11, remaining: 1, total: 2 })
+    decksService.deleteTrack.mockResolvedValue(undefined)
+    const { result } = renderHook(() => useStudySession('all'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.deleteCurrent()
+    })
+
+    expect(decksService.deleteTrack).toHaveBeenCalledWith(10)
+    // loadNext re-reads the scope, so the totals reflect the deletion.
+    await waitFor(() => expect(result.current.card.track_id).toBe(11))
+    expect(result.current.progress.total).toBe(2)
+    expect(result.current.error).toBeNull()
+  })
+
+  it('deleteCurrent surfaces an error and keeps the current card', async () => {
+    decksService.studyNext.mockResolvedValue(sampleCard)
+    decksService.deleteTrack.mockRejectedValue(new Error('nope'))
+    const { result } = renderHook(() => useStudySession('all'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.deleteCurrent()
+    })
+
+    expect(result.current.error).toBeTruthy()
+    // The card must not advance when the delete failed.
+    expect(result.current.card.track_id).toBe(10)
+    expect(result.current.grading).toBe(false)
+  })
+
   it('next excludes the current card on the next fetch', async () => {
     decksService.studyNext
       .mockResolvedValueOnce(sampleCard)

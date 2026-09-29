@@ -4,7 +4,7 @@ function intervalLabel(interval) {
   return `${interval}d`
 }
 
-function TrackRow({ track, mastered }) {
+function TrackRow({ track, mastered, onDelete }) {
   return (
     <div className={`track-row ${mastered ? 'track-row--mastered' : ''}`} data-testid="track-row">
       <div className="track-info">
@@ -16,11 +16,21 @@ function TrackRow({ track, mastered }) {
           🔁 {intervalLabel(track.interval)}
         </div>
       )}
+      <button
+        type="button"
+        className="track-delete"
+        data-testid="track-delete"
+        title="Delete song"
+        aria-label={`Delete ${track.title}`}
+        onClick={() => onDelete(track)}
+      >
+        🗑
+      </button>
     </div>
   )
 }
 
-export default function MasteryDashboard({ deck, onReset }) {
+export default function MasteryDashboard({ deck, onReset, onDeleteTrack }) {
   const tracks = deck.tracks || []
   // Show the cards nearest review (shortest interval) first.
   const learning = tracks
@@ -43,7 +53,7 @@ export default function MasteryDashboard({ deck, onReset }) {
           <h3>Still Learning ({learning.length})</h3>
           <div className="track-list" data-testid="learning-list">
             {learning.map((t) => (
-              <TrackRow key={t.id} track={t} mastered={false} />
+              <TrackRow key={t.id} track={t} mastered={false} onDelete={onDeleteTrack} />
             ))}
           </div>
         </section>
@@ -54,7 +64,7 @@ export default function MasteryDashboard({ deck, onReset }) {
           <h3 className="mastered-heading">Mastered ({mastered.length})</h3>
           <div className="track-list" data-testid="mastered-list">
             {mastered.map((t) => (
-              <TrackRow key={t.id} track={t} mastered />
+              <TrackRow key={t.id} track={t} mastered onDelete={onDeleteTrack} />
             ))}
           </div>
         </section>

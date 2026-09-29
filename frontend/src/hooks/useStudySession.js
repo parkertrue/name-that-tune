@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { studyNext, gradeAnswer } from '../api/services/decksService'
+import { studyNext, gradeAnswer, deleteTrack } from '../api/services/decksService'
 import { getErrorMessage } from '../api/errors'
 
 // Drives one study session over a deck (real id) or the virtual "all" scope.
@@ -104,6 +104,22 @@ export function useStudySession(deckId) {
     await loadNext()
   }, [grade, loadNext])
 
+  // Remove the current card's song from this deck, then advance. loadNext
+  // re-reads the scope totals, so remaining/mastered counts stay correct.
+  const deleteCurrent = useCallback(async () => {
+    if (!card) return
+    setGrading(true)
+    setError(null)
+    try {
+      await deleteTrack(card.track_id)
+      await loadNext()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setGrading(false)
+    }
+  }, [card, loadNext])
+
   return {
     card,
     result,
@@ -117,6 +133,7 @@ export function useStudySession(deckId) {
     reveal,
     rate,
     master,
+    deleteCurrent,
     next: loadNext,
   }
 }

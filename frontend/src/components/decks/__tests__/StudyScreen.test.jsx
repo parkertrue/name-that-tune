@@ -12,6 +12,7 @@ const baseProps = {
   onReveal: vi.fn(),
   onRate: vi.fn(),
   onMaster: vi.fn(),
+  onDelete: vi.fn(),
 }
 
 function setup(overrides = {}) {
@@ -65,9 +66,18 @@ describe('StudyScreen', () => {
     expect(props.onReveal).toHaveBeenCalled()
   })
 
-  it('hides the Mastered button until revealed', () => {
+  it('hides the Mastered and Delete buttons until revealed', () => {
     setup()
     expect(screen.queryByTestId('master-btn')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('delete-btn')).not.toBeInTheDocument()
+  })
+
+  it('deletes the current song once revealed', () => {
+    const props = setup({
+      result: { correct: true, title: 'Song', artists: ['A'], interval: 1, mastered: false },
+    })
+    fireEvent.click(screen.getByTestId('delete-btn'))
+    expect(props.onDelete).toHaveBeenCalled()
   })
 
   it('shows the graded result, rating buttons and Mastered once revealed', () => {

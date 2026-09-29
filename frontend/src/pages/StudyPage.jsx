@@ -7,8 +7,13 @@ export default function StudyPage() {
   const session = useStudySession(deckId)
   const {
     card, result, done, loading, grading, error, score, progress,
-    submitGuess, reveal, rate, master, next,
+    submitGuess, reveal, rate, master, deleteCurrent, next,
   } = session
+
+  const handleDelete = async () => {
+    if (!window.confirm('Delete this song? It will be removed from this set.')) return
+    await deleteCurrent()
+  }
 
   return (
     <div className="study-page">
@@ -48,6 +53,7 @@ export default function StudyPage() {
             onReveal={reveal}
             onRate={rate}
             onMaster={master}
+            onDelete={handleDelete}
           />
         )}
       </div>

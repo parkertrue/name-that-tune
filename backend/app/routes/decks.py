@@ -166,6 +166,29 @@ def import_tracks(deck_id):
     return jsonify({"added": added}), 201
 
 
+@decks_bp.route('/tracks/<int:track_id>', methods=['DELETE'])
+@jwt_required()
+def delete_track(track_id):
+    """Delete a single track (one deck's copy of a song).
+
+    Only this Track row is removed, so the song disappears from the virtual
+    "All Songs" scope unless another deck still holds a copy (matched by
+    spotify_id) — that copy keeps the song in All Songs.
+    """
+    user_id = int(get_jwt_identity())
+    track = db.session.execute(
+        select(Track).join(Deck, Track.deck_id == Deck.id).where(
+            Track.id == track_id, Deck.user_id == user_id
+        )
+    ).scalar_one_or_none()
+    if track is None:
+        return error_response("TRACK_NOT_FOUND", "Track not found", 404)
+
+    db.session.delete(track)
+    db.session.commit()
+    return jsonify({"message": "Track deleted"}), 200
+
+
 @decks_bp.route('/<int:deck_id>/reset', methods=['POST'])
 @jwt_required()
 def reset_deck(deck_id):

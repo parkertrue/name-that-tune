@@ -137,6 +137,52 @@ class TestDeleteDeck:
         assert response.status_code == 404
 
 
+class TestDeleteTrack:
+    def test_delete_success(self, client, auth_headers, sample_tracks, db):
+        from app.models import Track
+        track_id = sample_tracks[0].id
+        response = client.delete(f'/api/decks/tracks/{track_id}',
+                                 headers=auth_headers)
+        assert response.status_code == 200
+        assert db.session.get(Track, track_id) is None
+
+    def test_missing_track_404(self, client, auth_headers, sample_user):
+        response = client.delete('/api/decks/tracks/999999',
+                                 headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_other_users_track_404(self, client, auth_headers, other_user_deck, db):
+        from app.models import Track
+        track = db.session.execute(
+            select(Track).where(Track.deck_id == other_user_deck.id)
+        ).scalars().first()
+        response = client.delete(f'/api/decks/tracks/{track.id}',
+                                 headers=auth_headers)
+        assert response.status_code == 404
+        # The track must survive an unauthorized delete attempt.
+        assert db.session.get(Track, track.id) is not None
+
+    def test_leaves_all_songs_when_copy_remains_in_another_deck(
+            self, client, auth_headers, sample_tracks, sample_user, db):
+        from app.models import Deck, Track
+        # A second deck holding the same song (matched by spotify_id).
+        other_deck = Deck(user_id=sample_user.id, name='Second Deck')
+        db.session.add(other_deck)
+        db.session.commit()
+        shared = sample_tracks[0]
+        db.session.add(Track(deck_id=other_deck.id, title=shared.title,
+                             artists=shared.artists, spotify_id=shared.spotify_id))
+        db.session.commit()
+
+        before = json.loads(
+            client.get('/api/decks/all', headers=auth_headers).data)['total']
+        client.delete(f'/api/decks/tracks/{shared.id}', headers=auth_headers)
+        after = json.loads(
+            client.get('/api/decks/all', headers=auth_headers).data)['total']
+        # The song stays in "All Songs" because the other deck still holds it.
+        assert after == before
+
+
 class TestImportTracks:
     def test_import_success(self, client, auth_headers, sample_deck):
         payload = {'tracks': [

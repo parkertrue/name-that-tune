@@ -25,6 +25,7 @@ export default function StudyScreen({
   onReveal,
   onRate,
   onMaster,
+  onDelete,
 }) {
   const numArtists = card.num_artists || 1
   const [artists, setArtists] = useState(() => Array(numArtists).fill(''))
@@ -176,6 +177,10 @@ export default function StudyScreen({
                 🏆 Mastered
               </button>
             </div>
+            <button type="button" className="study-delete" data-testid="delete-btn"
+                    onClick={onDelete} disabled={grading}>
+              🗑 Delete song
+            </button>
           </>
         )}
       </div>

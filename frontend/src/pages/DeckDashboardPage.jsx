@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { fetchDeck, resetDeck } from '../api/services/decksService'
+import { fetchDeck, resetDeck, deleteTrack } from '../api/services/decksService'
 import { getErrorMessage } from '../api/errors'
 import MasteryDashboard from '../components/decks/MasteryDashboard'
 
@@ -36,6 +36,16 @@ export default function DeckDashboardPage() {
     }
   }
 
+  const handleDeleteTrack = async (track) => {
+    if (!window.confirm(`Delete "${track.title}" from this deck?`)) return
+    try {
+      await deleteTrack(track.id)
+      await load()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    }
+  }
+
   return (
     <div className="deck-dashboard-page">
       <div className="decks-container">
@@ -58,7 +68,7 @@ export default function DeckDashboardPage() {
                 )}
               </div>
             </header>
-            <MasteryDashboard deck={deck} onReset={handleReset} />
+            <MasteryDashboard deck={deck} onReset={handleReset} onDeleteTrack={handleDeleteTrack} />
           </>
         )}
       </div>

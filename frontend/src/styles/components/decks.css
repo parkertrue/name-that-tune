@@ -271,6 +271,24 @@
   background: #dcfce7;
 }
 
+.track-delete {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.25rem;
+  border-radius: 6px;
+  opacity: 0.55;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.track-delete:hover {
+  opacity: 1;
+  background: #fee2e2;
+}
+
 .track-info {
   flex: 1;
   min-width: 0;

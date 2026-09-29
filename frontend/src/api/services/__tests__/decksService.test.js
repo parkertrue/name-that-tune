@@ -5,6 +5,7 @@ import {
   createDeck,
   fetchDeck,
   deleteDeck,
+  deleteTrack,
   importTracks,
   resetDeck,
   studyNext,
@@ -50,6 +51,12 @@ describe('decksService', () => {
     api.delete.mockResolvedValue({})
     await deleteDeck(7)
     expect(api.delete).toHaveBeenCalledWith('/decks/7')
+  })
+
+  it('deleteTrack calls DELETE /decks/tracks/:id', async () => {
+    api.delete.mockResolvedValue({})
+    await deleteTrack(42)
+    expect(api.delete).toHaveBeenCalledWith('/decks/tracks/42')
   })
 
   it('importTracks POSTs tracks', async () => {
