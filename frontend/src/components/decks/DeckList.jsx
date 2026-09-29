@@ -39,9 +39,11 @@ export default function DeckList({ decks, allSongs, loading, onDelete }) {
           <p>No decks yet. Create one above and import songs to start studying!</p>
         </div>
       ) : (
-        decks.map((deck) => (
-          <DeckCard key={deck.id} deck={deck} onDelete={onDelete} />
-        ))
+        <div className="deck-list-scroll" data-testid="deck-list-scroll">
+          {decks.map((deck) => (
+            <DeckCard key={deck.id} deck={deck} onDelete={onDelete} />
+          ))}
+        </div>
       )}
     </div>
   )

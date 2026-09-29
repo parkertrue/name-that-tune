@@ -105,6 +105,18 @@
   gap: 0.75rem;
 }
 
+/* Per-deck cards scroll independently so a long list doesn't push the import
+   section off-screen. The "All Songs" card stays pinned above this region. */
+.deck-list-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 50vh;
+  overflow-y: auto;
+  /* Room so card borders/shadows aren't clipped by the scrollbar. */
+  padding-right: 0.25rem;
+}
+
 .deck-card {
   display: flex;
   justify-content: space-between;

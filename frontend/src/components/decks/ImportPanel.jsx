@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { parseImport } from '../../utils/importParser'
 import { BOOKMARKLET_CODE } from '../../utils/bookmarklet'
 
@@ -7,6 +7,12 @@ export default function ImportPanel({ onImport, importing }) {
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!message) return
+    const timer = setTimeout(() => setMessage(null), 4000)
+    return () => clearTimeout(timer)
+  }, [message])
 
   const handleCopyBookmarklet = async () => {
     try {
