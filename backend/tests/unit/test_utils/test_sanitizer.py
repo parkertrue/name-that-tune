@@ -27,15 +27,20 @@ class TestSanitizePlainText:
         text = "cost: $100 (50% off!) — great deal #1 @here"
         assert sanitizer.sanitize_text(text) == text
 
-    def test_encodes_bare_ampersand(self, sanitizer):
-        """nh3 HTML-encodes bare ampersands for safety."""
+    def test_preserves_bare_ampersand(self, sanitizer):
+        """Bare ampersands survive as plain text, e.g. "Brooks & Dunn"."""
         assert sanitizer.sanitize_text(
-            "Bob & Jane") == "Bob &amp; Jane"
+            "Bob & Jane") == "Bob & Jane"
 
-    def test_preserves_already_encoded_entity(self, sanitizer):
-        """An already-encoded &amp; is kept as &amp; (not double-encoded)."""
+    def test_decodes_already_encoded_entity(self, sanitizer):
+        """An encoded &amp; is decoded back to a literal & in plain-text output."""
         assert sanitizer.sanitize_text(
-            "Bob &amp; Jane") == "Bob &amp; Jane"
+            "Bob &amp; Jane") == "Bob & Jane"
+
+    def test_preserves_comparison_operators(self, sanitizer):
+        """Bare < and > that form no tag survive: the output is plain text and
+        escaping is the render layer's job, not storage's."""
+        assert sanitizer.sanitize_text("a < b and c > d") == "a < b and c > d"
 
 
 class TestSanitizeScriptInjection:
@@ -48,6 +53,26 @@ class TestSanitizeScriptInjection:
         assert "<script>" not in result
         assert "alert" not in result
         assert "Hello" in result
+
+    def test_strips_entity_encoded_script_tag(self, sanitizer):
+        """Entities are decoded before stripping, so markup smuggled in as
+        &lt;script&gt; is removed rather than surviving as literal text."""
+        assert sanitizer.sanitize_text(
+            "&lt;script&gt;alert(1)&lt;/script&gt;") == ""
+
+    def test_double_encoded_markup_survives_as_literal_text(self, sanitizer):
+        """Double-encoded markup comes back out as tag-looking characters.
+
+        One unescape runs before nh3 and one after. For this input nh3 never
+        sees a real tag (it is all entities at that point), so the trailing
+        unescape yields the literal characters "<script>". This is safe only
+        because the result is plain text that the render layer escapes -- it
+        documents why sanitize_text output must never be interpolated into
+        HTML directly.
+        """
+        assert sanitizer.sanitize_text(
+            "&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;"
+        ) == "<script>alert(1)</script>"
 
     def test_strips_script_tag_only(self, sanitizer):
         """Input that is *only* a script tag produces an empty string."""
