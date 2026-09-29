@@ -5,6 +5,10 @@ __pycache__/
 # Node
 node_modules/
 
+# Build output (nginx/Dockerfile builds the frontend from source)
+frontend/dist/
+htmlcov/
+
 # Environment Files
 .env.dev
 .env.prod
